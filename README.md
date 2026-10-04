@@ -4,7 +4,7 @@
 
 TechCV maps a target job description to evidence in a candidate's real experience before recommending resume changes. It separates **keyword coverage** from **evidence strength**, flags claims that need confirmation, and provides an explainable **Role Evidence Score** instead of pretending to reproduce a proprietary ATS score.
 
-[Open the full project guide](./TECHCV_PROJECT_DOCUMENTATION.html) for the current architecture, workflow, API contract, local setup, verification status, and roadmap.
+[View the rendered project guide](https://ashnair10.github.io/AI-Resume-Analyzer/) in your browser, or [view the HTML source](./TECHCV_PROJECT_DOCUMENTATION.html). GitHub Pages deploys the guide automatically when it changes. If Pages has not been enabled for the repository yet, select **Settings → Pages → GitHub Actions** once.
 
 ## What is included in this build
 
