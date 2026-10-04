@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Activity, ArrowRight, Braces, CheckCircle2, FileText, Gauge, GitCompareArrows, LockKeyhole, ScanSearch, ShieldCheck, Sparkles, Upload, X } from "lucide-react";
@@ -64,6 +65,7 @@ export default function AnalyzePage() {
           <nav className="space-y-1">
             {nav.map(([Icon, label, active]) => {
               const I = Icon as typeof ScanSearch;
+              if (label === "Resume Builder") return <Link key="builder" href="/builder" className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-violet-300 hover:bg-white/[.06]"><FileText className="h-4 w-4" />Resume Builder</Link>;
               return <button key={label as string} disabled={!active} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${active ? "bg-white/[.06] text-white" : "text-zinc-600"}`}><I className="h-4 w-4" />{label as string}{!active && <span className="ml-auto text-[9px] uppercase tracking-wider">soon</span>}</button>;
             })}
           </nav>
@@ -74,6 +76,7 @@ export default function AnalyzePage() {
         </aside>
 
         <section className="min-w-0 flex-1 p-4 md:p-7">
+          <Link href="/builder" className="mb-4 inline-block text-sm text-violet-300 underline">Build and download DOCX + PDF →</Link>
           <header className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
               <div className="mb-2 flex items-center gap-2"><Badge>Analysis Workspace</Badge><Badge className="border-violet-400/20 bg-violet-400/[.06] text-violet-300">v0.3</Badge></div>
@@ -90,7 +93,7 @@ export default function AnalyzePage() {
                 <CardContent>
                   <input ref={inputRef} className="hidden" type="file" accept=".pdf,.docx" onChange={e => setFile(e.target.files?.[0] || null)} />
                   <motion.button whileHover={{ scale: 1.006 }} whileTap={{ scale: .995 }} onClick={() => inputRef.current?.click()} className="group flex min-h-28 w-full items-center justify-center rounded-xl border border-dashed border-white/10 bg-white/[.02] px-4 transition hover:border-violet-400/30 hover:bg-violet-400/[.025]">
-                    {file ? <div className="flex w-full items-center gap-3"><div className="rounded-lg bg-violet-400/10 p-2"><FileText className="h-4 w-4 text-violet-300" /></div><div className="min-w-0 flex-1 text-left"><div className="truncate text-sm text-zinc-200">{file.name}</div><div className="text-xs text-zinc-600">{(file.size / 1024 / 1024).toFixed(2)} MB</div></div><X onClick={e => { e.stopPropagation(); setFile(null); }} className="h-4 w-4 text-zinc-600" /></div> : <div className="text-center"><Upload className="mx-auto mb-2 h-5 w-5 text-zinc-600 transition group-hover:text-violet-300" /><div className="text-sm text-zinc-300">Choose resume</div><div className="mt-1 text-xs text-zinc-600">Your file stays local to this API session</div></div>}
+                    {file ? <div className="flex w-full items-center gap-3"><div className="rounded-lg bg-violet-400/10 p-2"><FileText className="h-4 w-4 text-violet-300" /></div><div className="min-w-0 flex-1 text-left"><div className="truncate text-sm text-zinc-200">{file.name}</div><div className="text-xs text-zinc-600">{(file.size / 1024 / 1024).toFixed(2)} MB</div></div><X onClick={e => { e.stopPropagation(); setFile(null); }} className="h-4 w-4 text-zinc-600" /></div> : <div className="text-center"><Upload className="mx-auto mb-2 h-5 w-5 text-zinc-600 transition group-hover:text-violet-300" /><div className="text-sm text-zinc-300">Choose resume</div><div className="mt-1 text-xs text-zinc-600">Processed by the API; AI review sends text to Gemini</div></div>}
                   </motion.button>
                 </CardContent>
               </Card>

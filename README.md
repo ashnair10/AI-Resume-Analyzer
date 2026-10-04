@@ -24,6 +24,40 @@ TechCV maps a target job description to evidence in a candidate's real experienc
 - Isolated AI Gateway boundary for future Azure OpenAI / Foundry routing
 - Optional integration points for Langfuse, Azure Monitor/Application Insights, Azure Content Safety
 
+## Resume builder for each application
+
+Open **Resume Builder** from the analyzer, or visit `http://localhost:3000/builder`.
+
+1. Import your master DOCX/PDF or use the blank template. Check imported reading order and headings; original visual designs are not preserved.
+2. Save the master in your browser and download a text backup. Load it for each new application rather than overwriting it with a tailored version.
+3. Enter the company, role, and full JD. Run local evidence checks, or opt into Gemini review for semantic gaps and proposed rewrites.
+4. Edit your draft. Apply individual AI rewrites only when the original is a unique exact match; confirm added facts when flagged. Undo is available. Editing the resume or JD marks the review stale.
+5. Choose **Compact** or **Classic**, both single-column templates. Add comma-separated terms for selective bolding. Terms only style existing text; they do not insert skills.
+6. Confirm the facts and download **DOCX + PDF**. The ZIP includes both files, the source draft, JD, extracted text from each format, and `checks.json` with PDF page count and extraction parity.
+7. Inspect the PDF and checks before uploading. Save the application version in your browser if desired; the last 20 saved applications can be reloaded.
+
+PDFs are converted from the generated DOCX through LibreOffice, avoiding separate layouts and divergent content. A per-request temporary directory and LibreOffice profile isolate concurrent conversions; temporary files are deleted after each request. No resume database is added. Export responses disable HTTP caching.
+
+### PDF converter setup
+
+Docker builds install LibreOffice Writer and Liberation fonts automatically. For local development:
+
+- Windows: install LibreOffice and add its `program` directory to `PATH`.
+- macOS: install LibreOffice and ensure `soffice` is available on `PATH` (the executable is inside the application bundle).
+- Ubuntu/Debian: `sudo apt-get install libreoffice-writer fonts-liberation`.
+
+If conversion fails or times out, the UI reports it and **DOCX only** remains available. Never substitute a renamed DOCX as a PDF.
+
+### What these checks mean
+
+Matching extracted text is a useful format check, not a promise of equal ATS results. The builder does not reproduce Naukri percentiles, Google screening rules, employer ATS scoring, or rejection probabilities. The same content can be treated differently by downstream parsers. Verify important contact details, headings, URLs, and technical terms after import and export.
+
+The deterministic analyzer uses lexical matching and conservative action/metric evidence rules, not a complete semantic evaluation. Skills lists and dates alone do not establish strong project evidence. Gemini suggestions still require human review and can be wrong. The builder does not invent metrics, certifications, tools, or job experience during export.
+
+Browser saves are opt-in, confined to the current browser/device, and lost if site data is cleared. **Clear saved browser data** removes the saved master and application history. Keep a downloaded backup. Export ZIPs contain personal text and the target JD; keep them private. With AI review enabled, the resume and JD are sent to the configured Gemini provider. The local heuristic path and document export do not call a model.
+
+The templates are built-in text-based single-column designs, not exact copies of an uploaded resume. Microsoft Word may paginate differently from LibreOffice. Scanned PDF import needs OCR before use. Job tailoring remains an editable, reviewed workflow; there is no automatic application submission.
+
 ## Architecture
 
 ```text
@@ -208,12 +242,17 @@ Your previous Streamlit entrypoint can be preserved temporarily under `legacy/st
 - project/work evidence provenance
 - interactive Truth Guard confirmations
 
-### v0.5 — Resume Builder
-- master developer profile
-- project/achievement evidence vault
-- accepted/rejected rewrite state
-- ATS-safe DOCX/PDF generation
-- smart emphasis/bolding
+### Resume Builder — implemented in this update
+- browser-saved master resume and application versions
+- individual accepted rewrites with fact confirmation and undo
+- single-source DOCX/PDF bundles with extraction checks
+- compact/classic single-column templates and selective bolding
+
+### Next builder improvements
+- structured evidence vault and per-claim provenance
+- exact custom DOCX template preservation
+- side-by-side version comparisons
+- authenticated cross-device profile storage
 
 ### v0.6 — Experiment Lab
 - Resume A/B comparison
@@ -231,3 +270,5 @@ Your previous Streamlit entrypoint can be preserved temporarily under `legacy/st
 > **A missing keyword is not permission to invent a skill.**
 
 TechCV should recommend the strongest truthful wording supported by the candidate's actual work.
+
+AI review accepts at most 20,000 resume characters and 14,000 JD characters. Larger inputs return an explicit limit message rather than a silently truncated AI review. Local checks accept the entire builder draft up to 40,000 characters and JD up to 20,000 characters.

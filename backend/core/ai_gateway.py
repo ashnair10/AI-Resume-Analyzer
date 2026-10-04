@@ -20,6 +20,9 @@ def analyze_resume_ai(resume_text: str, job_description: str, heuristics: dict) 
     if not os.getenv("GEMINI_API_KEY"):
         return AIResult(False, "none", None, None)
 
+    if len(resume_text) > 20000 or len(job_description) > 14000:
+        return AIResult(False, "gemini", None, None, "AI review limits are 20,000 resume characters and 14,000 JD characters. Shorten the input; local checks still cover the complete text.")
+
     model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     try:
         from src.gemini_analyzer import analyze_with_gemini
