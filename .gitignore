@@ -1,10 +1,21 @@
-.venv/
-venv/
+# Python
 __pycache__/
 *.py[cod]
+.venv/
+venv/
 .pytest_cache/
 .env
 .streamlit/secrets.toml
+legacy/streamlit-app/.env
+backend/.env
+
+# Node
+node_modules/
+.next/
+frontend/.env.local
+npm-debug.log*
+
+# OS / IDE
 .DS_Store
-.idea/
 .vscode/
+.idea/

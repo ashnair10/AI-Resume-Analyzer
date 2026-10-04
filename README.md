@@ -1,203 +1,231 @@
-# TechCV — Gemini + Transparent ATS Heuristics (AI Resume Coach)
+# TechCV
 
-A portfolio-ready Python/Streamlit project inspired by the workflow described in Jyoti Dabass' Medium tutorial on building an AI Resume Analyzer with Google Gemini.
+**Evidence-first AI resume builder for developers and tech professionals.**
 
-This implementation extends the idea into a **resume-vs-job-description analyzer** with transparent, inspectable scoring plus structured Gemini feedback.
+TechCV maps a target job description to evidence in a candidate's real experience before recommending resume changes. It separates **keyword coverage** from **evidence strength**, flags claims that need confirmation, and provides an explainable **Role Evidence Score** instead of pretending to reproduce a proprietary ATS score.
 
-## What it does
+## What is included in this build
 
-- Upload a PDF resume
-- Extract resume text, page count, font families, and font sizes with PyMuPDF
-- Parse the target job description for frequently occurring role keywords
-- Calculate a transparent **ATS-style heuristic score** using:
-  - 45% keyword alignment
-  - 25% expected resume section coverage
-  - 20% evidence of impact (metrics, action-oriented bullets)
-  - 10% lightweight formatting checks
-- Show matched and missing/underrepresented JD keywords
-- Use Google Gemini for structured recruiter-style feedback
-- Suggest truthful improvements without inventing candidate experience
-
-> **Important:** The ATS score is a custom project heuristic. It does not claim to reproduce Google, Workday, Greenhouse, Taleo, Lever, or any other commercial/employer ATS scoring algorithm.
+- Next.js + React + TypeScript frontend
+- shadcn/ui-style source components built on Radix primitives
+- Tailwind CSS v4
+- Motion for React (Framer Motion successor)
+- FastAPI + Pydantic backend
+- PDF and DOCX resume parsing
+- Explainable requirement/evidence analysis
+- ClaimCheck / truth-aware review when Gemini is enabled
+- Recruiter 10-second scan and rewrite diffs when Gemini is enabled
+- Structured JSON application logs
+- End-to-end `trace_id` propagation from UI -> API -> analysis
+- OpenTelemetry-ready FastAPI instrumentation
+- Lightweight input guardrails for PII/injection signals
+- Isolated AI Gateway boundary for future Azure OpenAI / Foundry routing
+- Optional integration points for Langfuse, Azure Monitor/Application Insights, Azure Content Safety
 
 ## Architecture
 
 ```text
-Resume PDF ──> PyMuPDF extraction ──> text + font metadata
-                                      │
-Job Description ──> keyword parser ───┼──> deterministic heuristic scores
-                                      │
-                                      └──> Gemini structured review
-                                                   │
-                                                   v
-                                          Streamlit dashboard
+Next.js / React
+   |  x-trace-id
+   v
+FastAPI
+   |-- document parser (PDF/DOCX)
+   |-- deterministic evidence engine
+   |-- guardrails
+   |-- AI Gateway
+   |      `-- Gemini today; Azure OpenAI/Foundry can be added later
+   |
+   `-- structured telemetry
+          |-- JSON logs
+          `-- OpenTelemetry (optional)
+
+Deployment adapters (optional):
+OpenTelemetry -> Azure Monitor / Application Insights / Collector
+AI traces      -> Langfuse
+Guardrails     -> Azure AI Content Safety + Presidio
+Secrets        -> Azure Key Vault
+API edge       -> Azure API Management
 ```
 
-## Project structure
+The local project intentionally does **not** require Azure, Langfuse, n8n, or a cloud account. Those are deployment/platform capabilities, not prerequisites for developing the resume product.
 
-```text
-techcv/
-├── app.py
-├── requirements.txt
-├── .env.example
-├── .gitignore
-├── src/
-│   ├── extractor.py
-│   ├── heuristics.py
-│   ├── gemini_analyzer.py
-│   └── schemas.py
-└── tests/
-    └── test_heuristics.py
-```
+## 1. Run the FastAPI backend
 
-## Built with
+Windows PowerShell:
 
-### Technologies
-
-- **Python** is used for the application and analysis logic.
-- **Streamlit** provides the interactive web interface, including PDF upload, job-description input, scorecards, and review results.
-- **PyMuPDF** extracts text, page counts, font families, and font sizes from uploaded PDFs.
-- **Google Gen AI SDK** sends the resume, job description, and heuristic results to the configured Gemini model for qualitative feedback.
-- **Pydantic** defines and validates the structured Gemini review.
-- **python-dotenv** loads local environment variables from `.env`; deployment environments can provide the same variables directly.
-- **pytest** runs the automated tests.
-- Python standard-library modules, including `re`, `collections.Counter`, and `dataclasses`, support tokenization, frequency counting, and typed document data.
-
-### How the application works
-
-1. Streamlit accepts a PDF resume and a job description.
-2. PyMuPDF extracts resume text and document metadata.
-3. Local, deterministic heuristics compare job-description keywords with resume tokens and check for resume sections, impact evidence, and basic formatting signals.
-4. The app displays the heuristic scores and matching or missing keywords.
-5. When analysis is requested, the Gemini API generates qualitative feedback constrained to the `ResumeAIReview` schema.
-
-### Efficiency and reliability choices
-
-- Resume tokens are stored in a **set**, making keyword membership checks efficient.
-- **`Counter`** aggregates job-description keyword and PDF font frequencies; only the most frequent keywords and fonts are retained for analysis or display.
-- The Gemini prompt is bounded to **12,000 characters of job description** and **18,000 characters of resume text**, helping limit request size, latency, and API usage.
-- The Gemini call runs as part of the user's Analyze action rather than on every page render.
-- Numeric scoring is performed locally with deterministic rules, keeping it repeatable and independent of the LLM response.
-- Gemini's response is requested as JSON conforming to a Pydantic model, instead of relying on unstructured prose parsing.
-
-These are practical design and efficiency choices, not the result of formal performance benchmarking. The project does not currently implement caching, OCR, or semantic keyword matching.
-
-## Setup
-
-```bash
-git clone <your-repository-url>
-cd ai-resume-analyzer
+```powershell
+cd backend
 python -m venv .venv
-```
-
-Activate the virtual environment:
-
-```bash
-# macOS/Linux
-source .venv/bin/activate
-
-# Windows PowerShell
-.venv\Scripts\Activate.ps1
-```
-
-Install dependencies:
-
-```bash
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+Copy-Item .env.example .env
+uvicorn app.main:app --reload --port 8000
 ```
 
-Create your local environment file:
+macOS/Linux:
 
 ```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 cp .env.example .env
+uvicorn app.main:app --reload --port 8000
 ```
 
-Set:
+Check:
 
 ```text
+http://localhost:8000/health
+http://localhost:8000/docs
+```
+
+### Gemini is optional
+
+The deterministic Evidence Map works without any API key. To enable semantic JD decomposition, ClaimCheck, recruiter scan and rewrite suggestions, edit `backend/.env`:
+
+```env
 GEMINI_API_KEY=your_key_here
-GEMINI_MODEL=gemini-3.8-flash
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
-Run:
+Never commit `.env`.
 
-```bash
-streamlit run app.py
+## 2. Run the Next.js frontend
+
+Open another terminal:
+
+```powershell
+cd frontend
+npm install
+Copy-Item .env.local.example .env.local
+npm run dev
 ```
 
-## Run tests
+Open:
+
+```text
+http://localhost:3000
+```
+
+## 3. Test it
+
+1. Upload a PDF or DOCX resume.
+2. Paste a job description (a sample developer/AI JD is prefilled).
+3. Leave **AI-enhanced review** on if a Gemini key is configured, or switch it off for deterministic-only testing.
+4. Select **Analyze**.
+5. Inspect Role Evidence Score, Evidence Map, ClaimCheck, AI review and Trace tabs.
+
+Backend tests:
 
 ```bash
+cd backend
 pytest -q
 ```
 
-## Design choices
+Frontend production build:
 
-### Why deterministic scoring + an LLM?
-A pure LLM "ATS score" is hard to reproduce and audit. This project keeps the numerical score deterministic and uses Gemini for the qualitative layer: strengths, gaps, rewrites, and interview focus areas.
+```bash
+cd frontend
+npm run build
+```
 
-### Why structured Gemini output?
-The Google GenAI SDK supports schema-constrained JSON output. This makes the app safer and easier to render than parsing loosely formatted prose.
+## Observability & governance design
 
-### Security
-- Never commit a real Gemini API key.
-- `.env` is ignored by Git.
-- The API key is read only from the server process environment.
-- Resume text is sent to Gemini only when the AI review is requested.
+### Trace IDs
 
-## Possible next upgrades
+The frontend creates a trace ID for each analysis request and sends it as `x-trace-id`. FastAPI reuses it in structured logs and returns it to the UI.
 
-- OCR for scanned PDFs
-- DOCX ingestion
-- semantic skill normalization (e.g. `K8s` → `Kubernetes`)
-- embedding-based JD/resume similarity
-- section-level scoring
-- downloadable PDF analysis report
-- Dockerfile + GitHub Actions CI
-- evaluation dataset for score calibration
-- optional PII redaction before LLM calls
+No resume text is intentionally logged.
 
-## Advanced features & roadmap
+### OpenTelemetry
 
-Below are recommended enhancements to make TechCV more useful and production-ready. They are prioritized roughly from high-impact to lower-effort:
+Local mode is off by default. To enable OTLP trace export:
 
-1. OCR (Tesseract or Google Vision) for scanned or image-only PDFs, with confidence-aware fallbacks.
-2. DOCX and plain-text ingestion to cover more resume formats and preserve semantic structure (headings, lists).
-3. Semantic skill normalization and aliasing (e.g., `K8s` → `Kubernetes`, `PyTorch` → `PyTorch`) using a small curated dictionary plus fuzzy matching.
-4. Embedding-based JD/resume similarity (sentence-BERT or small OpenAI/Gemini embeddings) to surface semantically related skills and role fit beyond token overlap.
-5. Section-level scoring: score each resume section (Summary, Experience, Skills, Education, Projects) separately and show per-section suggestions.
-6. Guided rewrite templates: generate tailored bullet rewordings that preserve truth (use schema to ensure the LLM does not invent metrics).
-7. Downloadable PDF or DOCX report generation for sharing with recruiters.
-8. User accounts and a resume history dashboard to compare versions and show progress over time (requires auth and privacy considerations).
-9. A/B testing harness for prompt and heuristic experiments to iterate on what reviewers and recruiters prefer.
-10. CI, linting, and unit/integration tests for extraction edge cases, prompt behavior, and quality metrics.
+```env
+OTEL_ENABLED=true
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318/v1/traces
+```
 
-## Resume improvement suggestions and common mistakes
+This keeps telemetry vendor-neutral. In Azure, configure an OpenTelemetry/Azure Monitor path rather than putting monitoring calls throughout the application.
 
-These recommendations can be surfaced to users directly from TechCV's UI as actionable tips:
+### AI Gateway
 
-- Prefer measurable impact: include specific numbers (%, absolute improvements, time saved) and context for achievements.
-- Use action-first bullet points: start bullets with strong verbs ("Improved", "Reduced", "Designed").
-- Tailor to the JD: emphasize top JD keywords in the Summary and top experience bullets, but avoid keyword stuffing.
-- Keep formatting ATS-friendly: avoid complex tables and unusual fonts; use standard section headers.
-- Keep most resumes to 1–2 pages unless seniority requires more detail.
-- Make skills and tools easy to find: a dedicated "Skills" section helps both ATS and human reviewers.
-- Avoid vague phrases: replace "Responsible for" with specific outcomes.
+`backend/core/ai_gateway.py` is the only application boundary that should know which model provider is being used. Future capabilities belong here or behind this boundary:
 
-## UX feature ideas to nudge better resumes
+- Azure OpenAI / Azure AI Foundry
+- prompt registry/version IDs
+- Langfuse generation traces
+- token/cost metrics
+- model routing/fallback
+- Azure AI Content Safety
+- output schema validation and policy checks
 
-- Highlight exact lines where a missing keyword would best fit and offer inline rewrite suggestions.
-- Provide example reformulated bullets (short, quantified, context→action→impact structure).
-- Offer a "resume checklist" (sections present, number of quantified bullets, common formatting flags).
-- Show an "expected seniority" estimate from resume length, titles, and experience to guide length/level recommendations.
-- Let users mark which bullets are supported (truth check) before generating new suggested metrics.
+### Guardrails
 
+This build includes lightweight PII and prompt-injection signal detection for the JD. For production, extend the guardrail layer with:
 
+- Microsoft Presidio for PII detection/redaction
+- Azure AI Content Safety
+- prompt-injection classifiers/policies
+- schema validation
+- claim provenance and confirmation state
 
-## Inspiration / attribution
+### n8n
 
-Concept inspired by the Medium article **“Build Your Own AI Resume Analyzer with Python and Google Gemini”** by Jyoti Dabass, Ph.D. This repository is an independent implementation with additional JD matching, deterministic scoring, structured output, testing, and security notes.
+Do **not** add n8n just to analyze a resume. Use it later for cross-system workflows such as application tracking, job ingestion, notifications, or approval flows. Keep the core resume analysis path directly behind FastAPI for simplicity and latency.
 
-## License
+## Integrating with your existing `AI-Resume-Analyzer` repository
 
-MIT
+Recommended end-state:
+
+```text
+AI-Resume-Analyzer/
+├── frontend/          # this Next.js app
+├── backend/           # this FastAPI + existing Python analysis logic
+├── docker-compose.yml
+├── README.md
+└── LICENSE
+```
+
+Your previous Streamlit entrypoint can be preserved temporarily under `legacy/streamlit-app/` until the Next.js UI reaches feature parity, then removed.
+
+## Product roadmap
+
+### v0.3 — Evidence Workspace (this build)
+- Role Evidence Score
+- requirement -> evidence map
+- ClaimCheck
+- smooth developer-focused UI
+- FastAPI split
+- traceability and guardrail foundation
+
+### v0.4 — Developer Evidence Graph
+- normalize technologies (`k8s` -> `Kubernetes`, `Fast API` -> `FastAPI`)
+- embeddings/semantic requirement matching
+- project/work evidence provenance
+- interactive Truth Guard confirmations
+
+### v0.5 — Resume Builder
+- master developer profile
+- project/achievement evidence vault
+- accepted/rejected rewrite state
+- ATS-safe DOCX/PDF generation
+- smart emphasis/bolding
+
+### v0.6 — Experiment Lab
+- Resume A/B comparison
+- explainable evidence diff
+- application/version history
+- regression tests for resume changes
+
+### v1.0 — Developer Resume Compiler
+- master career evidence -> target job -> verified role-specific resume
+- GitHub/project evidence (opt-in)
+- interview-defense view for every major claim
+
+## Product principle
+
+> **A missing keyword is not permission to invent a skill.**
+
+TechCV should recommend the strongest truthful wording supported by the candidate's actual work.
