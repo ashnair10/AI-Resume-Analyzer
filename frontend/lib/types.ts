@@ -20,11 +20,18 @@ export type Analysis = {
   subjective_claims: string[];
   weakly_supported_mentions: string[];
   formatting_flags: string[];
+  quality_feedback: Array<{
+    priority: "priority" | "suggestion" | "info";
+    category: string;
+    title: string;
+    detail: string;
+  }>;
   stats: {
     lines: number;
     bullet_lines: number;
     quantified_lines: number;
     action_lines: number;
+    word_count: number;
   };
 };
 

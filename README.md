@@ -15,6 +15,7 @@ TechCV maps a target job description to evidence in a candidate's real experienc
 - FastAPI + Pydantic backend
 - PDF and DOCX resume parsing
 - Explainable requirement/evidence analysis
+- Actionable deterministic feedback for resume sections, passive/long bullets, common spelling and capitalization checks, word count, and layout review
 - ClaimCheck / truth-aware review when Gemini is enabled
 - Recruiter 10-second scan and rewrite diffs when Gemini is enabled
 - Structured JSON application logs
@@ -32,7 +33,7 @@ Open **Resume Builder** from the analyzer, or visit `http://localhost:3000/build
 2. Save the master in your browser and download a text backup. Load it for each new application rather than overwriting it with a tailored version.
 3. Enter the company, role, and full JD. Run local evidence checks, or opt into Gemini review for semantic gaps and proposed rewrites.
 4. Edit your draft. Apply individual AI rewrites only when the original is a unique exact match; confirm added facts when flagged. Undo is available. Editing the resume or JD marks the review stale.
-5. Choose **Compact** or **Classic**, both single-column templates. Add comma-separated terms for selective bolding. Terms only style existing text; they do not insert skills.
+5. Choose **Classic**, **Modern Blue**, or **Compact** single-column templates. Add comma-separated terms for selective bolding. Terms only style existing text; they do not insert skills.
 6. Confirm the facts and download **DOCX + PDF**. The ZIP includes both files, the source draft, JD, extracted text from each format, and `checks.json` with PDF page count and extraction parity.
 7. Inspect the PDF and checks before uploading. Save the application version in your browser if desired; the last 20 saved applications can be reloaded.
 
@@ -52,7 +53,7 @@ If conversion fails or times out, the UI reports it and **DOCX only** remains av
 
 Matching extracted text is a useful format check, not a promise of equal ATS results. The builder does not reproduce Naukri percentiles, Google screening rules, employer ATS scoring, or rejection probabilities. The same content can be treated differently by downstream parsers. Verify important contact details, headings, URLs, and technical terms after import and export.
 
-The deterministic analyzer uses lexical matching and conservative action/metric evidence rules, not a complete semantic evaluation. Skills lists and dates alone do not establish strong project evidence. Gemini suggestions still require human review and can be wrong. The builder does not invent metrics, certifications, tools, or job experience during export.
+The deterministic analyzer uses lexical matching and conservative action/metric evidence rules, not a complete semantic evaluation. Its improvement list includes limited spelling/capitalization checks and advisory bullet, length, and layout prompts; it is not a full grammar checker and cannot reliably infer visual columns or pagination from extracted text. Skills lists and dates alone do not establish strong project evidence. Gemini suggestions still require human review and can be wrong. The builder does not invent metrics, certifications, tools, or job experience during export.
 
 Browser saves are opt-in, confined to the current browser/device, and lost if site data is cleared. **Clear saved browser data** removes the saved master and application history. Keep a downloaded backup. Export ZIPs contain personal text and the target JD; keep them private. With AI review enabled, the resume and JD are sent to the configured Gemini provider. The local heuristic path and document export do not call a model.
 
@@ -150,7 +151,7 @@ http://localhost:3000
 2. Paste a job description (a sample developer/AI JD is prefilled).
 3. Leave **AI-enhanced review** on if a Gemini key is configured, or switch it off for deterministic-only testing.
 4. Select **Analyze**.
-5. Inspect Role Evidence Score, Evidence Map, ClaimCheck, AI review and Trace tabs.
+5. Start with **Your improvements** for actionable writing and structure suggestions, then inspect **Role gaps**, ClaimCheck, AI review and Trace. Generic job-description wording is filtered from role-gap keywords; direct lexical matches remain heuristic signals, not proof of skill.
 
 Backend tests:
 

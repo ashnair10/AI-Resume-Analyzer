@@ -55,3 +55,41 @@ def test_punctuation_skills_and_terminal_periods_match():
     evidence = {item["requirement"]: item for item in result["evidence_map"]}
     assert evidence["c++"]["status"] == "moderate"
     assert "python" in result["matched_keywords"]
+
+
+def test_job_keywords_skip_generic_location_and_resume_prompt_words():
+    from src.heuristics import top_job_keywords
+
+    keywords = top_job_keywords(
+        "Position in India: qualifications include working, building, and technical solutions. "
+        "Need Python, cloud security, Kubernetes, and generative AI agents."
+    )
+
+    assert {"position", "india", "qualifications", "working", "building", "technical"}.isdisjoint(keywords)
+    assert {"python", "cloud", "security", "kubernetes", "generative", "agents"} <= set(keywords)
+
+
+def test_actionable_feedback_includes_wording_length_and_layout_guidance():
+    resume = """Jordan Example
+Skills
+Python FastAPI
+Experience
+- Responsible for building internal tools
+- built a service that supports document extraction, workflow review, and reliable processing for multiple internal teams across several business functions, including audit records, manager approval workflows, structured data validation, retry handling, and clear status notifications
+"""
+    result = analyze_heuristics(
+        resume,
+        "Seeking Python and FastAPI experience to build reliable document tools for a technical team.",
+        0,
+        [],
+        [],
+    )
+
+    feedback = result["quality_feedback"]
+    titles = {item["title"] for item in feedback}
+    assert any(item["category"] == "Bullet clarity" for item in feedback)
+    assert any(item["category"] == "Conciseness" for item in feedback)
+    assert any(item["category"] == "Layout" for item in feedback)
+    assert any(item["category"] == "Length" for item in feedback)
+    assert result["stats"]["word_count"] > 0
+    assert titles

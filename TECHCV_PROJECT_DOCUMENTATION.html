@@ -447,13 +447,13 @@
             <div class="step"><b>4 · Analyze</b><span>Score, evidence map, and guardrail signals</span></div>
             <div class="step"><b>5 · Review</b><span>Inspect local results and optional AI insights</span></div>
           </div>
-          <p>The analysis page presents the Role Evidence Score and readiness, an evidence map, ClaimCheck, an AI review when returned, and a trace/guardrail view. Gemini can be switched off for deterministic-only testing.</p>
+          <p>The analysis opens with <strong>Your improvements</strong>: limited spelling and capitalization checks, passive or long bullet prompts, section coverage, word-count/page guidance, and a single-column layout reminder. Then inspect <strong>Role gaps</strong> for direct keyword matches, ClaimCheck, optional AI review, and trace/guardrail details. Generic JD boilerplate is filtered from role-gap keywords. Gemini can be switched off for deterministic-only testing.</p>
         </section>
 
         <section class="content-section" id="analysis">
           <div class="section-kicker">03 · Deterministic engine</div>
           <h2>Scoring that can be inspected</h2>
-          <p>The local engine uses simple heuristics—not semantic matching—to identify frequent job terms, compare them with resume tokens, locate matching lines, and estimate resume quality signals.</p>
+          <p>The local engine uses simple heuristics—not semantic matching—to identify higher-signal job terms, compare them with resume tokens, locate matching lines, and surface practical editing prompts. Generic role/location boilerplate is filtered. Writing checks are deliberately limited: they are not a full grammar proofread, and extracted text cannot reliably reveal columns or final pagination.</p>
           <div class="score-list" aria-label="Role Evidence Score weights">
             <div class="score-row"><span>Requirement coverage</span><div class="bar"><i style="width:35%"></i></div><b>35%</b></div>
             <div class="score-row"><span>Evidence strength</span><div class="bar"><i style="width:30%"></i></div><b>30%</b></div>
@@ -679,7 +679,7 @@ npm run build</pre>
           </div>
           <div class="callout green">
             <strong>Latest local verification · 4 October 2026</strong>
-            <p>Six backend tests passed, including API health, upload-to-analysis DOCX flow, empty-text rejection, and localhost/loopback CORS. The Next.js production build passed. A browser-driven local DOCX upload returned a rendered analysis result.</p>
+            <p>The focused backend suite passed 19 tests, including analysis, builder template, and API coverage; two PDF bundle tests were excluded because LibreOffice is not installed locally. The Next.js production build and TypeScript check passed.</p>
           </div>
           <p class="small">Verification is a snapshot of the current development checkout, not a guarantee that later changes or another machine have the same result.</p>
         </section>
@@ -691,9 +691,9 @@ npm run build</pre>
             <table>
               <thead><tr><th>Status</th><th>Capability</th><th>Scope</th></tr></thead>
               <tbody>
-                <tr><td><span class="pill green">Current · v0.3</span></td><td>Evidence Workspace</td><td>Next.js UI, FastAPI API, deterministic Role Evidence Score and map, optional Gemini review, trace IDs, basic guardrails.</td></tr>
+                <tr><td><span class="pill green">Current · v0.3</span></td><td>Evidence Workspace</td><td>Next.js UI, FastAPI API, deterministic Role Evidence Score and map, actionable quality prompts, optional Gemini review, trace IDs, and basic guardrails.</td></tr>
+                <tr><td><span class="pill green">Current · v0.3</span></td><td>Resume Builder</td><td>Editable role-specific drafts, review states, three built-in single-column templates (Classic, Modern Blue, Compact), and DOCX/PDF export.</td></tr>
                 <tr><td><span class="pill violet">Planned · v0.4</span></td><td>Developer Evidence Graph</td><td>Technology normalization, semantic matching, and clearer provenance between requirements, projects, and outcomes.</td></tr>
-                <tr><td><span class="pill violet">Planned · v0.5</span></td><td>Resume Builder</td><td>Master evidence profile, editable role-specific resumes, confirmation states, and DOCX/PDF export.</td></tr>
                 <tr><td><span class="pill violet">Planned · v0.6</span></td><td>Experiment Lab</td><td>Resume variant comparison, evidence differences, and version history.</td></tr>
               </tbody>
             </table>

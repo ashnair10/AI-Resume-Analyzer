@@ -9,7 +9,8 @@ import type { AIReview, Analysis } from "@/lib/types";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const MASTER_KEY = "techcv-master-v1";
 const HISTORY_KEY = "techcv-applications-v1";
-const field = "w-full rounded-xl border border-white/15 bg-black/25 p-3 text-sm text-zinc-100 outline-none focus:border-violet-400";
+const field = "w-full rounded-xl border border-slate-400/20 bg-slate-950/45 p-3 text-sm text-zinc-100 outline-none focus:border-sky-400";
+type ResumeTemplate = "classic" | "compact" | "modern";
 const example = `Your Name
 AI Engineer | email@example.com | City | github.com/yourname
 
@@ -29,7 +30,7 @@ Project name | Repository URL
 
 Education
 Degree | Institution | Year`;
-type Snapshot = { id: string; savedAt: string; company: string; role: string; content: string; jd: string; template: "classic" | "compact"; highlights: string };
+type Snapshot = { id: string; savedAt: string; company: string; role: string; content: string; jd: string; template: ResumeTemplate; highlights: string };
 type Review = { analysis: Analysis; ai_review: AIReview | null; ai_error: string | null; ai_enabled: boolean };
 
 async function check(response: Response) {
@@ -50,7 +51,7 @@ export default function BuilderPage() {
   const [company, setCompany] = useState("");
   const [role, setRole] = useState("");
   const [jd, setJd] = useState("");
-  const [template, setTemplate] = useState<"classic" | "compact">("compact");
+  const [template, setTemplate] = useState<ResumeTemplate>("classic");
   const [highlights, setHighlights] = useState("Python, FastAPI, RAG");
   const [reviewed, setReviewed] = useState(false);
   const [useAI, setUseAI] = useState(false);
@@ -155,6 +156,18 @@ export default function BuilderPage() {
             <p className="text-sm">Role Evidence Score: <strong>{review.analysis.role_evidence_score}/100</strong></p>
             <p className="text-xs leading-5 text-zinc-400">This project&apos;s heuristic score is not an ATS score, Naukri percentile, or probability of selection.</p>
             <p className="text-sm text-zinc-300">Keywords to investigate: {review.analysis.missing_keywords.join(", ") || "None identified"}</p>
+            <div className="rounded-xl border border-slate-400/15 bg-slate-950/25 p-4">
+              <h3 className="text-sm font-medium text-slate-100">Actionable improvements</h3>
+              <p className="mt-1 text-xs text-slate-300">{review.analysis.stats.word_count} words · {review.analysis.stats.bullet_lines} bullets</p>
+              <div className="mt-3 space-y-3">
+                {review.analysis.quality_feedback.map((item, i) => (
+                  <div key={`${item.category}-${i}`} className="border-l-2 border-sky-400/55 pl-3">
+                    <div className="text-xs font-medium text-slate-100">{item.title}</div>
+                    <p className="mt-1 text-xs leading-5 text-slate-300">{item.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
             {review.ai_review && <><p className="text-sm leading-6 text-violet-200">{review.ai_review.role_summary}</p><ul className="list-disc space-y-2 pl-5 text-sm text-zinc-300">{review.ai_review.material_gaps.map((gap, i) => <li key={i}>{gap}</li>)}</ul></>}
             {review.ai_review?.rewrite_suggestions.map((item, index) => <div key={index} className="space-y-3 rounded-xl border border-white/10 p-3 text-sm">
               <p className="text-zinc-400">Original: {item.original}</p><p className="text-emerald-200">Suggested: {item.suggested}</p><p className="text-xs text-zinc-400">{item.reason}</p>
@@ -164,12 +177,34 @@ export default function BuilderPage() {
           </>}
         </CardContent></Card>
         <Card><CardHeader><h2 className="font-semibold">4. Download application files</h2></CardHeader><CardContent className="space-y-4">
-          <label className="block text-sm">Template<select value={template} onChange={e => setTemplate(e.target.value as "classic" | "compact")} className={`${field} mt-2`}><option value="compact">Compact · tighter spacing · single column</option><option value="classic">Classic · more breathing room · single column</option></select></label>
+          <fieldset>
+            <legend className="text-sm font-medium">Choose a resume template</legend>
+            <p className="mt-1 text-xs leading-5 text-slate-300">All templates are single-column for clear reading and safer ATS parsing. Choose based on the amount of content; the export does not preserve an imported resume&apos;s original design.</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              {([
+                ["classic", "Classic", "Traditional black-and-white layout", "Best starting point · readable spacing"],
+                ["modern", "Modern blue", "Blue section accents, same single column", "For a subtle, polished visual style"],
+                ["compact", "Compact", "Tighter spacing, same single column", "Use only if content narrowly overflows"],
+              ] as const).map(([value, title, description, hint]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={template === value}
+                  onClick={() => setTemplate(value)}
+                  className={`rounded-xl border p-3 text-left transition ${template === value ? "border-sky-300/70 bg-sky-400/10 ring-1 ring-sky-300/20" : "border-slate-400/20 bg-slate-950/25 hover:border-slate-300/40"}`}
+                >
+                  <span className="block text-sm font-semibold text-slate-100">{title}</span>
+                  <span className="mt-1 block text-[11px] leading-4 text-slate-300">{description}</span>
+                  <span className="mt-3 block border-t border-slate-400/15 pt-2 text-[10px] leading-4 text-sky-200">{hint}</span>
+                </button>
+              ))}
+            </div>
+          </fieldset>
           <label className="block text-sm">Bold these terms (comma separated)<input value={highlights} onChange={e => setHighlights(e.target.value)} className={`${field} mt-2`} placeholder="Python, Camunda, RAG, 88%" /></label>
           <p className="text-xs leading-5 text-zinc-400">Bold applies only to existing words; it does not add skills. Both formats use the same DOCX layout. The PDF bundle includes page count, extracted text from both files, and a comparison check.</p>
           <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={reviewed} onChange={e => setReviewed(e.target.checked)} />I reviewed the draft and can support its claims, dates, metrics, and technologies.</label>
           <div className="flex flex-wrap gap-2"><Button disabled={busy || !reviewed || !company.trim() || !role.trim() || content.trim().length < 40} onClick={() => void exportFile("bundle")}>Download DOCX + PDF</Button><Button variant="secondary" disabled={busy || !reviewed || content.trim().length < 40} onClick={() => void exportFile("docx")}>DOCX only</Button></div>
-          <p className="text-xs leading-5 text-zinc-400">Open the exported PDF to check layout before uploading. Fonts and pagination in Microsoft Word may vary. Neither template reproduces an uploaded design exactly.</p>
+          <p className="text-xs leading-5 text-zinc-400">Open the exported PDF to check layout before uploading. Fonts and pagination in Microsoft Word may vary. Multi-column designs can be read in the wrong order by some systems; these templates stay single-column.</p>
           <Button variant="secondary" disabled={!content} onClick={() => browserAction(() => { const old: Snapshot[] = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); const updated = [snapshot(), ...old].slice(0, 20); localStorage.setItem(HISTORY_KEY, JSON.stringify(updated)); setHistory(updated); setMessage("Application saved in this browser."); })}>Save application version</Button>
           <Button variant="ghost" onClick={() => browserAction(() => setHistory(JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]")))}>Show saved applications</Button>
           {history.map(item => <button key={item.id} className="block w-full rounded-xl border border-white/10 p-3 text-left text-sm" onClick={() => { edit(item.content); setCompany(item.company); setRole(item.role); setJd(item.jd); setTemplate(item.template); setHighlights(item.highlights); setReview(null); setUndo([]); setMessage("Saved application loaded. Review before re-exporting."); }}>{item.company || "Application"} · {item.role || "Resume"}<span className="mt-1 block text-xs text-zinc-400">{new Date(item.savedAt).toLocaleString()}</span></button>)}

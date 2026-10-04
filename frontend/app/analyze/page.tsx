@@ -52,12 +52,12 @@ export default function AnalyzePage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden text-zinc-100">
-      <div className="grid-noise pointer-events-none absolute inset-0 opacity-60" />
-      <div className="pointer-events-none absolute left-1/2 top-0 h-96 w-[48rem] -translate-x-1/2 rounded-full bg-violet-500/10 blur-3xl" />
+    <main className="relative min-h-screen overflow-hidden text-slate-100">
+      <div className="grid-noise pointer-events-none absolute inset-0 opacity-30" />
+      <div className="pointer-events-none absolute left-1/2 top-0 h-96 w-[48rem] -translate-x-1/2 rounded-full bg-sky-500/10 blur-3xl" />
 
       <div className="relative mx-auto flex min-h-screen max-w-[1680px]">
-        <aside className="hidden w-64 shrink-0 border-r border-white/[.06] p-5 lg:block">
+        <aside className="hidden w-64 shrink-0 border-r border-slate-300/[.12] bg-slate-950/15 p-5 lg:block">
           <div className="mb-9 flex items-center gap-3 px-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-violet-400/20 bg-violet-400/10"><Sparkles className="h-4 w-4 text-violet-300" /></div>
             <div><div className="font-semibold tracking-tight">TechCV</div><div className="text-[11px] text-zinc-600">Developer Resume Intelligence</div></div>
@@ -80,8 +80,8 @@ export default function AnalyzePage() {
           <header className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
               <div className="mb-2 flex items-center gap-2"><Badge>Analysis Workspace</Badge><Badge className="border-violet-400/20 bg-violet-400/[.06] text-violet-300">v0.3</Badge></div>
-              <h1 className="text-3xl font-semibold tracking-[-.035em] md:text-4xl">Build a resume your experience can prove.</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500">Map job requirements to real project evidence, inspect weak claims, and strengthen your resume without keyword stuffing or fabricated experience.</p>
+              <h1 className="text-3xl font-semibold tracking-[-.035em] md:text-4xl">Find the gaps. Know what to improve.</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">Get practical feedback on job fit, writing, content length, and resume layout. Recommendations are prompts to review—not facts about your experience.</p>
             </div>
             {result && <div className="flex items-center gap-2 text-xs text-zinc-600"><Activity className="h-3.5 w-3.5" /> trace {result.trace_id.slice(0, 10)} · {result.duration_ms} ms</div>}
           </header>
@@ -116,8 +116,8 @@ export default function AnalyzePage() {
                 <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex min-h-[650px] items-center justify-center rounded-2xl border border-white/[.06] bg-white/[.018] p-8">
                   <div className="max-w-lg text-center">
                     <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[.08] bg-white/[.03]"><Gauge className="h-6 w-6 text-zinc-500" /></div>
-                    <h2 className="text-xl font-medium tracking-tight">Your evidence map starts here</h2>
-                    <p className="mt-2 text-sm leading-6 text-zinc-600">Upload a resume and analyze the target role. TechCV will separate keyword coverage, evidence strength, impact quality, ATS parsability, and claim risk.</p>
+                    <h2 className="text-xl font-medium tracking-tight">Your improvement list starts here</h2>
+                    <p className="mt-2 text-sm leading-6 text-zinc-600">Upload a resume and analyze the target role. Start with practical writing and structure prompts, then review selected role gaps and evidence.</p>
                   </div>
                 </motion.div>
               ) : (
@@ -125,25 +125,57 @@ export default function AnalyzePage() {
                   <div className="grid gap-4 md:grid-cols-[220px_1fr]">
                     <Card className="flex min-h-52 items-center justify-center"><ScoreRing score={result.analysis.role_evidence_score} /></Card>
                     <Card>
-                      <CardHeader><div className="flex flex-wrap items-center justify-between gap-2"><div><div className="text-sm font-medium">Role readiness</div><div className="mt-1 text-xs text-zinc-600">Explainable score, not a proprietary ATS prediction.</div></div>{status && <Badge className={status[1]}>{status[0]}</Badge>}</div></CardHeader>
+                      <CardHeader><div className="flex flex-wrap items-center justify-between gap-2"><div><div className="text-sm font-medium">At-a-glance estimate</div><div className="mt-1 text-xs text-slate-300">A heuristic guide, not an ATS score or hiring prediction.</div></div>{status && <Badge className={status[1]}>{status[0]}</Badge>}</div></CardHeader>
                       <CardContent>
                         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                           {(["requirement_coverage_score", "evidence_strength_score", "impact_score", "formatting_score"] as const).map((k, i) => (
-                            <motion.div key={k} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .06 * i }} className="rounded-xl border border-white/[.06] bg-white/[.025] p-3">
-                              <div className="text-xl font-semibold">{result.analysis[k]}%</div><div className="mt-1 text-[11px] capitalize text-zinc-600">{metricLabel(k)}</div>
+                            <motion.div key={k} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .06 * i }} className="rounded-xl border border-slate-300/15 bg-slate-950/25 p-3">
+                              <div className="text-xl font-semibold text-slate-100">{result.analysis[k]}%</div><div className="mt-1 text-[11px] capitalize text-slate-300">{metricLabel(k)}</div>
                             </motion.div>
                           ))}
                         </div>
-                        <div className="mt-4 flex flex-wrap gap-2"><Badge><LockKeyhole className="mr-1 h-3 w-3" /> PII signals: {result.guardrails.pii_detected ? result.guardrails.pii_types.join(", ") : "none in JD"}</Badge><Badge>AI: {result.ai.enabled ? `${result.ai.provider} · ${result.ai.model}` : "local analysis"}</Badge></div>
+                        <div className="mt-4 flex flex-wrap gap-2"><Badge><LockKeyhole className="mr-1 h-3 w-3" /> PII signals in JD: {result.guardrails.pii_detected ? result.guardrails.pii_types.join(", ") : "none detected"}</Badge><Badge>Review: {result.ai.enabled ? `${result.ai.provider} · ${result.ai.model}` : "local checks"}</Badge></div>
                       </CardContent>
                     </Card>
                   </div>
 
                   <Card>
                     <CardContent className="pt-5">
-                      <Tabs defaultValue="evidence">
-                        <TabsList><TabsTrigger value="evidence">Evidence map</TabsTrigger><TabsTrigger value="claims">ClaimCheck</TabsTrigger><TabsTrigger value="review">AI review</TabsTrigger><TabsTrigger value="observability">Trace</TabsTrigger></TabsList>
+                      <Tabs defaultValue="improvements">
+                        <TabsList><TabsTrigger value="improvements">Your improvements</TabsTrigger><TabsTrigger value="evidence">Role gaps</TabsTrigger><TabsTrigger value="claims">ClaimCheck</TabsTrigger><TabsTrigger value="review">AI review</TabsTrigger><TabsTrigger value="observability">Trace</TabsTrigger></TabsList>
+                        <TabsContent value="improvements">
+                          <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+                            <div>
+                              <h2 className="text-lg font-semibold text-slate-100">What to work on next</h2>
+                              <p className="mt-1 text-xs text-slate-300">{result.analysis.stats.word_count} words · {result.analysis.stats.bullet_lines} bullets · {result.analysis.stats.quantified_lines} measurable work/project bullets detected</p>
+                            </div>
+                            <Link href="/builder" className="text-xs font-medium text-sky-300 underline underline-offset-4">Open resume builder →</Link>
+                          </div>
+                          <div className="grid gap-2 md:grid-cols-2">
+                            {result.analysis.quality_feedback.map((item, i) => {
+                              const tone = item.priority === "priority"
+                                ? "border-amber-300/30 bg-amber-300/[.055]"
+                                : item.priority === "suggestion"
+                                  ? "border-sky-300/25 bg-sky-300/[.045]"
+                                  : "border-slate-300/20 bg-slate-950/20";
+                              return (
+                                <div key={`${item.category}-${i}`} className={`rounded-xl border p-4 ${tone}`}>
+                                  <div className="flex items-center gap-2">
+                                    <Badge>{item.category}</Badge>
+                                    <span className="text-sm font-medium text-slate-100">{item.title}</span>
+                                  </div>
+                                  <p className="mt-2 text-xs leading-5 text-slate-200">{item.detail}</p>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <p className="mt-4 text-[11px] leading-5 text-slate-300">Writing checks catch a limited set of common patterns; they are not a full grammar proofread. Page and word guidance is approximate—keep the content relevant and readable.</p>
+                        </TabsContent>
                         <TabsContent value="evidence">
+                          <div className="mb-3">
+                            <h2 className="text-lg font-semibold text-slate-100">Job requirements to investigate</h2>
+                            <p className="mt-1 text-xs leading-5 text-slate-300">These are selected terms from the job description, not a complete skills checklist. Open a row to see matching resume lines. A match is not proof of proficiency; a missing term may have equivalent evidence phrased differently.</p>
+                          </div>
                           <div className="grid gap-2 md:grid-cols-2">{result.analysis.evidence_map.slice(0, 16).map((item, i) => <EvidenceCard key={`${item.requirement}-${i}`} item={item} index={i} />)}</div>
                         </TabsContent>
                         <TabsContent value="claims">
@@ -157,7 +189,7 @@ export default function AnalyzePage() {
                             )) : (
                               <div className="space-y-3">
                                 <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-4">
-                                  <div className="mb-2 text-xs uppercase tracking-wider text-zinc-600">Deterministic Truth Guard</div>
+                                  <div className="mb-2 text-xs uppercase tracking-wider text-slate-300">Resume wording signals</div>
                                   {result.analysis.subjective_claims.length ? (
                                     <>
                                       <p className="mb-2 text-xs text-amber-200/80">Subjective or inflated wording to review</p>
@@ -183,9 +215,9 @@ export default function AnalyzePage() {
                         <TabsContent value="review">
                           {result.ai_review ? (
                             <div className="space-y-5">
-                              <div className="rounded-xl border border-white/[.06] bg-white/[.02] p-4">
+                              <div className="rounded-xl border border-slate-300/15 bg-slate-950/25 p-4">
                                 <div className="mb-2 flex items-center justify-between gap-3">
-                                  <div className="text-xs uppercase tracking-wider text-zinc-600">Role summary</div>
+                                  <div className="text-xs uppercase tracking-wider text-slate-300">AI perspective · verify before applying</div>
                                   <Badge>{result.ai_review.readiness.replaceAll("_", " ")}</Badge>
                                 </div>
                                 <p className="text-sm leading-6 text-zinc-300">{result.ai_review.role_summary}</p>

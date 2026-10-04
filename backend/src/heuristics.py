@@ -6,10 +6,19 @@ STOPWORDS = {
     "using", "use", "used", "have", "has", "who", "but", "not", "all", "job", "role", "work", "team",
     "experience", "years", "skills", "strong", "ability", "knowledge", "preferred", "required", "requirements",
     "candidate", "responsibilities", "responsibility", "including", "across", "within", "about", "their",
+    "position", "positions", "working", "works", "worked", "qualification", "qualifications", "description",
+    "descriptions", "build", "building", "built", "develop", "developing", "seeking", "looking", "ideal",
+    "successful", "success", "must", "would", "could", "should", "able", "also", "well", "such", "etc",
+    "example", "examples", "e.g", "eg", "most", "many", "more", "less", "least", "make", "making",
+    "provide", "providing", "support", "supporting", "include", "including", "ensure", "ensuring",
+    "across", "various", "multiple", "business", "company", "organization", "organizations", "team",
+    "teams", "india", "hyderabad", "bengaluru", "bangalore", "pune", "gurgaon", "remote",
+    "technical", "professional", "professionals", "responsible", "responsibilities", "including",
+    "environment", "environments", "solutions", "solution", "role", "position", "description",
 }
 
 SECTIONS = {
-    "summary": ["summary", "profile", "objective"],
+    "summary": ["summary", "professional summary", "profile", "objective"],
     "experience": ["experience", "employment", "work history", "professional experience"],
     "skills": ["skills", "technical skills", "technologies", "core competencies"],
     "education": ["education", "academic"],
@@ -20,6 +29,27 @@ ACTION_WORDS = {
     "built", "developed", "designed", "implemented", "deployed", "led", "created", "optimized", "automated",
     "reduced", "improved", "delivered", "integrated", "engineered", "architected", "scaled", "migrated",
     "owned", "launched", "orchestrated", "streamlined", "increased", "decreased", "managed", "drove",
+}
+
+WEAK_OPENINGS = (
+    "responsible for",
+    "worked on",
+    "helped with",
+    "involved in",
+    "duties included",
+    "tasked with",
+)
+
+COMMON_MISSPELLINGS = {
+    "experiance": "experience",
+    "recieve": "receive",
+    "recieved": "received",
+    "managment": "management",
+    "developement": "development",
+    "enviroment": "environment",
+    "seperated": "separated",
+    "occured": "occurred",
+    "succesful": "successful",
 }
 
 SUBJECTIVE_CLAIMS = {
@@ -75,19 +105,166 @@ def _context_lines(text: str) -> list[tuple[str, str]]:
 
 def _best_evidence_for_keyword(keyword: str, resume_lines: list[str], limit: int = 3) -> list[str]:
     matches = [line for line in resume_lines if _mentions(keyword, line)]
-    matches.sort(key=lambda line: (_has_action(line) and _has_metric(line), _has_action(line), len(line)), reverse=True)
+    matches.sort(key=lambda line: (
+        _has_action(line) and _has_metric(line),
+        _has_action(line),
+        len(line),
+    ), reverse=True)
     return matches[:limit]
 
 
+def _quality_feedback(
+    resume: str,
+    section_hits: dict[str, bool],
+    bullet_lines: list[str],
+    quantified_lines: list[str],
+    page_count: int,
+    word_count: int,
+) -> list[dict[str, str]]:
+    feedback: list[dict[str, str]] = []
+
+    def add(priority: str, category: str, title: str, detail: str) -> None:
+        feedback.append({
+            "priority": priority,
+            "category": category,
+            "title": title,
+            "detail": detail,
+        })
+
+    missing_sections = [name.title() for name, present in section_hits.items() if not present]
+    if missing_sections:
+        add(
+            "suggestion",
+            "Structure",
+            "Check your resume sections",
+            f"These common sections were not detected: {', '.join(missing_sections)}. Add only sections that fit your experience; section detection is based on heading text.",
+        )
+
+    weak_bullets = [
+        line for line in bullet_lines
+        if line.lstrip("•-*– ").lower().startswith(WEAK_OPENINGS)
+    ]
+    for line in weak_bullets[:3]:
+        add(
+            "priority",
+            "Bullet clarity",
+            "Replace a passive bullet opening",
+            f"'{line[:180]}' starts with a vague phrase. Start with your specific action and state the outcome you can verify.",
+        )
+    if len(weak_bullets) > 3:
+        add(
+            "suggestion",
+            "Bullet clarity",
+            "Review other passive bullet openings",
+            f"{len(weak_bullets) - 3} more bullets use openings such as 'worked on' or 'responsible for'.",
+        )
+
+    long_bullets = [
+        (line, len(_tokens(line)))
+        for line in bullet_lines
+        if len(_tokens(line)) > 32
+    ]
+    for line, count in long_bullets[:3]:
+        add(
+            "suggestion",
+            "Conciseness",
+            f"Consider shortening this {count}-word bullet",
+            f"'{line[:180]}' is long for a quick scan. Keep the problem, your action, and the most useful result; this is a readability hint, not a strict limit.",
+        )
+    if not bullet_lines:
+        add(
+            "priority",
+            "Experience",
+            "Use concise achievement bullets",
+            "No bullet-style lines were detected. Use short bullets for work and project outcomes so readers can scan your contribution.",
+        )
+    elif not quantified_lines:
+        add(
+            "suggestion",
+            "Impact",
+            "Make outcomes clearer where possible",
+            "No action-led work or project bullet with a detected metric was found. Add a truthful scale, time, quality, or outcome measure where one is available; do not invent numbers.",
+        )
+
+    lowered_resume = resume.lower()
+    for misspelling, correction in COMMON_MISSPELLINGS.items():
+        needle = misspelling.strip()
+        if re.search(rf"\b{re.escape(needle)}\b", lowered_resume):
+            add(
+                "priority",
+                "Spelling",
+                f"Check spelling: “{needle}”",
+                f"Possible correction: “{correction.strip()}”. This is a limited automated spelling check; review the source wording.",
+            )
+
+    for line in bullet_lines:
+        text = line.lstrip("•-*– ").strip()
+        if text and text[0].islower() and len(text) > 1 and text[1].isalpha():
+            add(
+                "suggestion",
+                "Grammar",
+                "Check sentence capitalization",
+                f"'{line[:180]}' begins with a lowercase letter. Capitalize it if it is a complete bullet sentence.",
+            )
+            break
+
+    word_count_message = (
+        f"The extracted resume contains about {word_count} words. "
+        "As a rough editing guide, many early-career resumes fit one page and experienced candidates often use one to two pages. "
+        "Keep relevant evidence and readable type; do not remove useful content just to hit a number."
+    )
+    if page_count > 2:
+        add(
+            "suggestion",
+            "Length",
+            f"Review the {page_count}-page layout",
+            word_count_message,
+        )
+    elif word_count > 1100:
+        add(
+            "suggestion",
+            "Length",
+            f"Review the {word_count}-word content for focus",
+            word_count_message,
+        )
+    elif page_count == 0:
+        add(
+            "info",
+            "Length",
+            "Confirm page count in the exported PDF",
+            "DOCX pagination depends on the renderer and cannot be read reliably here. Use the builder's PDF preview/export to confirm the final page count and avoid shrinking text below a comfortable reading size.",
+        )
+
+    add(
+        "info",
+        "Layout",
+        "Prefer a clear single-column layout for ATS parsing",
+        "This text analysis cannot reliably detect columns, tables, icons, or reading order. A simple single-column template is the safer default; inspect the exported PDF and imported text if you use a multi-column design.",
+    )
+
+    if len(feedback) == 1 and feedback[0]["category"] == "Layout":
+        add(
+            "info",
+            "Review",
+            "No obvious high-priority writing issue detected",
+            "This is a limited automated check, not a complete grammar proofread. Review the resume manually and use optional AI review for broader language feedback.",
+        )
+    return feedback
+
+
 def analyze_heuristics(resume: str, jd: str, page_count: int, fonts: list[tuple[str, int]], font_sizes: list[tuple[float, int]]) -> dict:
-    lower = resume.lower()
     tokens = set(_tokens(resume))
     jd_keywords = top_job_keywords(jd)
     matched = [k for k in jd_keywords if k in tokens]
     missing = [k for k in jd_keywords if k not in tokens]
 
+    headings = {
+        line.strip().lstrip("# ").rstrip(":").strip().lower()
+        for line in resume.splitlines()
+        if line.strip()
+    }
     section_hits = {
-        name: any(re.search(rf"\b{re.escape(alias)}\b", lower) for alias in aliases)
+        name: any(alias in headings for alias in aliases)
         for name, aliases in SECTIONS.items()
     }
     section_score = round(100 * sum(section_hits.values()) / len(section_hits))
@@ -160,6 +337,16 @@ def analyze_heuristics(resume: str, jd: str, page_count: int, fonts: list[tuple[
     else:
         readiness = "weak_fit"
 
+    word_count = len(_tokens(resume))
+    quality_feedback = _quality_feedback(
+        resume,
+        section_hits,
+        bulletish,
+        quantified,
+        page_count,
+        word_count,
+    )
+
     return {
         "role_evidence_score": role_evidence_score,
         "requirement_coverage_score": coverage_score,
@@ -175,6 +362,7 @@ def analyze_heuristics(resume: str, jd: str, page_count: int, fonts: list[tuple[
         "subjective_claims": subjective_claims[:12],
         "weakly_supported_mentions": unsupported_skill_mentions[:12],
         "formatting_flags": formatting_flags,
+        "quality_feedback": quality_feedback,
         "page_count": page_count,
         "fonts": fonts,
         "font_sizes": font_sizes,
@@ -183,5 +371,6 @@ def analyze_heuristics(resume: str, jd: str, page_count: int, fonts: list[tuple[
             "bullet_lines": len(bulletish),
             "quantified_lines": len(quantified),
             "action_lines": len(action_lines),
+            "word_count": word_count,
         },
     }
