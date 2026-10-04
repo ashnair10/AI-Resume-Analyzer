@@ -9,7 +9,7 @@ from src.gemini_analyzer import analyze_with_gemini
 load_dotenv()
 
 st.set_page_config(page_title="AI Resume Analyzer", page_icon="📄", layout="wide")
-st.title("📄 AI Resume Analyzer")
+st.title("📄 TechCV — AI Resume Coach")
 st.caption("Transparent ATS-style heuristics + Google Gemini recruiter feedback")
 st.info("The ATS score in this project is a custom heuristic for learning and comparison. It does not reproduce any commercial ATS or employer screening system.")
 
