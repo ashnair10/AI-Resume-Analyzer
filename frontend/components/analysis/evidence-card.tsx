@@ -17,12 +17,12 @@ export function EvidenceCard({ item, index }: { item: EvidenceItem; index: numbe
   const M = meta[item.status];
   const Icon = M.icon;
   return (
-    <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * .035 }} className="overflow-hidden rounded-xl border border-white/[.07] bg-white/[.025]">
+    <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * .035 }} className="overflow-hidden rounded-xl border border-slate-300/15 bg-slate-950/30">
       <button onClick={() => setOpen(v => !v)} className="flex w-full items-center gap-3 p-3.5 text-left">
         <Icon className="h-4 w-4 shrink-0 text-zinc-400" />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium capitalize text-zinc-100">{item.requirement}</div>
-          <div className="mt-1 text-xs text-zinc-500">{item.evidence.length ? `${item.evidence.length} evidence signal${item.evidence.length > 1 ? "s" : ""}` : "No supporting evidence"}</div>
+          <div className="truncate text-sm font-medium capitalize text-slate-100">{item.requirement}</div>
+          <div className="mt-1 text-xs text-slate-300">{item.evidence.length ? `${item.evidence.length} matching resume line${item.evidence.length > 1 ? "s" : ""}` : "No direct keyword match found"}</div>
         </div>
         <span className={`rounded-full border px-2 py-1 text-[11px] ${M.cls}`}>{M.text}</span>
         <motion.span animate={{ rotate: open ? 180 : 0 }}><ChevronDown className="h-4 w-4 text-zinc-600" /></motion.span>
@@ -30,10 +30,10 @@ export function EvidenceCard({ item, index }: { item: EvidenceItem; index: numbe
       <AnimatePresence initial={false}>
         {open && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: .22 }}>
-            <div className="border-t border-white/[.06] px-4 py-3">
+            <div className="border-t border-slate-300/15 px-4 py-3">
               {item.evidence.length ? item.evidence.map((e, i) => (
-                <div key={i} className="mb-2 rounded-lg bg-black/25 px-3 py-2 text-xs leading-5 text-zinc-400 last:mb-0">{e}</div>
-              )) : <p className="text-xs text-zinc-500">This requirement appears in the JD but has no direct resume evidence yet.</p>}
+                <div key={i} className="mb-2 rounded-lg bg-slate-800/70 px-3 py-2 text-xs leading-5 text-slate-200 last:mb-0">{e}</div>
+              )) : <p className="text-xs text-slate-300">No direct wording match was found. Check whether you have equivalent experience expressed another way before treating this as a gap.</p>}
             </div>
           </motion.div>
         )}

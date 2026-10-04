@@ -36,7 +36,7 @@ def test_export_requires_review_and_valid_template():
     assert client.post("/api/resume/export?format=pdf", json=payload()).status_code == 400
 
 
-@pytest.mark.parametrize("template", ["classic", "compact"])
+@pytest.mark.parametrize("template", ["classic", "compact", "modern"])
 def test_docx_download_has_no_tables_and_highlights_existing_terms(template):
     response = TestClient(app).post("/api/resume/export?format=docx", json=payload(template=template, highlight_terms=["Python", "C++", "invented-skill"]))
     assert response.status_code == 200

@@ -35,7 +35,7 @@ class ResumeExport(BaseModel):
     company: str = Field(default="Application", max_length=120)
     role: str = Field(default="Resume", max_length=120)
     job_description: str = Field(default="", max_length=20000)
-    template: Literal["classic", "compact"] = "compact"
+    template: Literal["classic", "compact", "modern"] = "classic"
     highlight_terms: list[str] = Field(default_factory=list, max_length=30)
     reviewed: bool = False
 
@@ -76,24 +76,26 @@ def build_docx(request: ResumeExport) -> bytes:
     doc = Document()
     section = doc.sections[0]
     section.page_width, section.page_height = Inches(8.5), Inches(11)
-    margin = 0.65 if request.template == "compact" else 0.8
+    margin = 0.55 if request.template == "compact" else 0.8
+    if request.template == "modern":
+        margin = 0.75
     section.top_margin = section.bottom_margin = Inches(margin)
     section.left_margin = section.right_margin = Inches(margin)
     normal = doc.styles["Normal"]
-    normal.font.name = "Liberation Sans"
-    normal.font.size = Pt(10.5 if request.template == "compact" else 11)
+    normal.font.name = "Aptos" if request.template == "modern" else "Liberation Sans"
+    normal.font.size = Pt(10 if request.template == "compact" else 10.5 if request.template == "modern" else 11)
     normal.font.color.rgb = RGBColor(0, 0, 0)
-    normal.paragraph_format.space_after = Pt(3 if request.template == "compact" else 5)
-    normal.paragraph_format.line_spacing = 1.05 if request.template == "compact" else 1.12
+    normal.paragraph_format.space_after = Pt(2 if request.template == "compact" else 5 if request.template == "modern" else 4)
+    normal.paragraph_format.line_spacing = 1.0 if request.template == "compact" else 1.12
     # Some default templates include inherited blue title borders. Strip them.
     for style in doc.styles:
         for border in style.element.xpath(".//w:pBdr"):
             border.getparent().remove(border)
     for name in ["Title", "Heading 1"]:
         style = doc.styles[name]
-        style.font.name = "Liberation Sans"
-        style.font.color.rgb = RGBColor(0, 0, 0)
-        style.font.size = Pt(20 if name == "Title" else 11)
+        style.font.name = normal.font.name
+        style.font.color.rgb = RGBColor(28, 73, 112) if request.template == "modern" else RGBColor(0, 0, 0)
+        style.font.size = Pt(23 if name == "Title" and request.template == "modern" else 20 if name == "Title" else 11)
         style.font.bold = True
         style.paragraph_format.space_before = Pt(8 if name == "Heading 1" else 0)
         style.paragraph_format.space_after = Pt(4)
@@ -105,7 +107,20 @@ def build_docx(request: ResumeExport) -> bytes:
         if index == 0:
             doc.add_paragraph(line, "Title")
         elif is_heading:
-            doc.add_paragraph(heading, "Heading 1")
+            paragraph = doc.add_paragraph(heading, "Heading 1")
+            if request.template == "modern":
+                from docx.oxml import OxmlElement
+                from docx.oxml.ns import qn
+
+                properties = paragraph._p.get_or_add_pPr()
+                borders = OxmlElement("w:pBdr")
+                bottom = OxmlElement("w:bottom")
+                bottom.set(qn("w:val"), "single")
+                bottom.set(qn("w:sz"), "4")
+                bottom.set(qn("w:space"), "3")
+                bottom.set(qn("w:color"), "8CB7D9")
+                borders.append(bottom)
+                properties.append(borders)
         else:
             bullet = re.match(r"^[-*•]\s+", line)
             p = doc.add_paragraph()
