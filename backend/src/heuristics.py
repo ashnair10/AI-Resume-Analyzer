@@ -29,7 +29,7 @@ SUBJECTIVE_CLAIMS = {
 
 
 def _tokens(text: str) -> list[str]:
-    return re.findall(r"[A-Za-z][A-Za-z0-9+.#/-]{1,}", text.lower())
+    return [token.rstrip(".,/") for token in re.findall(r"[A-Za-z][A-Za-z0-9+.#/-]{1,}", text.lower())]
 
 
 def top_job_keywords(jd: str, limit: int = 40) -> list[str]:
@@ -41,10 +41,41 @@ def _lines(text: str) -> list[str]:
     return [re.sub(r"^[•\-–*]\s*", "", line.strip()) for line in text.splitlines() if line.strip()]
 
 
+def _mentions(keyword: str, line: str) -> bool:
+    return bool(re.search(rf"(?<!\w){re.escape(keyword)}(?!\w)", line, re.I))
+
+
+def _has_action(line: str) -> bool:
+    return any(_mentions(word, line) for word in ACTION_WORDS)
+
+
+def _has_metric(line: str) -> bool:
+    # Dates, years of experience, and numbered headings alone are not impact.
+    return bool(re.search(r"\d+(?:\.\d+)?\s*%|[₹$]\s*\d|\d[\d,]*(?:\s*[-–]\s*\d[\d,]*)?\s*(?:documents?|requests?|users?|hours?|minutes?|seconds?|ms|days?|files?|pages?)\b", line, re.I))
+
+
+def _context_lines(text: str) -> list[tuple[str, str]]:
+    aliases = {alias: section for section, names in SECTIONS.items() for alias in names}
+    aliases.update({"personal projects": "projects"})
+    current = "other"
+    result = []
+    for raw in text.splitlines():
+        line = re.sub(r"^[•\-–*]\s*", "", raw.strip())
+        if not line:
+            continue
+        heading = line.lstrip("# ").rstrip(":").lower()
+        if heading in aliases:
+            current = aliases[heading]
+        elif raw.strip().startswith("## "):
+            current = "other"
+        else:
+            result.append((line, current))
+    return result
+
+
 def _best_evidence_for_keyword(keyword: str, resume_lines: list[str], limit: int = 3) -> list[str]:
-    key = keyword.lower()
-    matches = [line for line in resume_lines if re.search(rf"\b{re.escape(key)}\b", line.lower())]
-    matches.sort(key=lambda line: (bool(re.search(r"\d", line)), len(line)), reverse=True)
+    matches = [line for line in resume_lines if _mentions(keyword, line)]
+    matches.sort(key=lambda line: (_has_action(line) and _has_metric(line), _has_action(line), len(line)), reverse=True)
     return matches[:limit]
 
 
@@ -65,7 +96,8 @@ def analyze_heuristics(resume: str, jd: str, page_count: int, fonts: list[tuple[
     lines = _lines(resume)
     raw_lines = [line.strip() for line in resume.splitlines() if line.strip()]
     bulletish = [line for line in raw_lines if re.match(r"^[•\-–*]", line)]
-    quantified = [line for line in lines if re.search(r"\b\d+(?:\.\d+)?%|\b\d+[+,]?\b|₹|\$", line)]
+    contexts = _context_lines(resume)
+    quantified = [line for line, section in contexts if section in {"experience", "projects"} and _has_action(line) and _has_metric(line)]
     action_lines = [line for line in lines if any(re.search(rf"\b{w}\b", line.lower()) for w in ACTION_WORDS)]
 
     impact_score = min(
@@ -80,15 +112,14 @@ def analyze_heuristics(resume: str, jd: str, page_count: int, fonts: list[tuple[
     evidence_map = []
     for keyword in jd_keywords[:20]:
         evidence = _best_evidence_for_keyword(keyword, lines)
-        if evidence:
-            if any(re.search(r"\d", e) for e in evidence) and any(
-                any(re.search(rf"\b{w}\b", e.lower()) for w in ACTION_WORDS) for e in evidence
-            ):
-                strength = "strong"
-            elif len(evidence) >= 2:
-                strength = "moderate"
-            else:
-                strength = "weak"
+        work_evidence = [line for line, section in contexts
+                         if section in {"experience", "projects"} and _mentions(keyword, line) and _has_action(line)]
+        if any(_has_metric(line) for line in work_evidence):
+            strength = "strong"
+        elif work_evidence:
+            strength = "moderate"
+        elif evidence:
+            strength = "weak"
         else:
             strength = "missing"
         evidence_map.append({"requirement": keyword, "status": strength, "evidence": evidence})

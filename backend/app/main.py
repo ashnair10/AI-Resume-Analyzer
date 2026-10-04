@@ -9,12 +9,14 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from starlette.concurrency import run_in_threadpool
 from core.ai_gateway import analyze_resume_ai
 from core.guardrails import inspect_input
 from core.logging import configure_logging, get_logger
 from core.telemetry import configure_telemetry
 from src.extractor import extract_resume
 from src.heuristics import analyze_heuristics
+from app.builder_routes import router as builder_router
 
 ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT / ".env")
@@ -26,6 +28,8 @@ app = FastAPI(
     version="0.3.0",
     description="Evidence-first resume analysis API for developers and tech professionals.",
 )
+
+app.include_router(builder_router)
 
 origins = [
     origin.strip()
@@ -41,6 +45,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
 configure_telemetry(app)
 
@@ -72,12 +77,12 @@ async def analyze(
     if len(job_description.strip()) < 80:
         raise HTTPException(400, "Paste a meaningful job description (at least 80 characters).")
 
-    file_bytes = await resume.read()
+    file_bytes = await resume.read(8 * 1024 * 1024 + 1)
     if len(file_bytes) > 8 * 1024 * 1024:
         raise HTTPException(413, "Resume exceeds the 8 MB local-demo limit.")
 
     try:
-        doc = extract_resume(file_bytes, resume.filename)
+        doc = await run_in_threadpool(extract_resume, file_bytes, resume.filename)
     except Exception as exc:
         log.exception("resume_parse_failed")
         raise HTTPException(422, f"Could not parse resume: {exc}") from exc
@@ -93,7 +98,7 @@ async def analyze(
     ai_payload = None
     ai_meta = {"enabled": False, "provider": "none", "model": None, "error": None}
     if use_ai:
-        ai = analyze_resume_ai(doc.text, job_description, result)
+        ai = await run_in_threadpool(analyze_resume_ai, doc.text, job_description, result)
         ai_payload = ai.review
         ai_meta = {"enabled": ai.enabled, "provider": ai.provider, "model": ai.model, "error": ai.error}
 
