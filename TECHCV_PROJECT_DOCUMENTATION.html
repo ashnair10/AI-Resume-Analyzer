@@ -1,0 +1,716 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#090b13">
+    <meta
+      name="description"
+      content="Project guide for TechCV, an evidence-first resume analysis workspace built with Next.js and FastAPI."
+    >
+    <title>TechCV — Project Guide</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --page: #090b13;
+        --panel: #10131f;
+        --panel-soft: #131726;
+        --line: rgba(185, 190, 222, .12);
+        --text: #f2f2fa;
+        --muted: #a0a4ba;
+        --subtle: #737991;
+        --violet: #a78bfa;
+        --mint: #73e2c0;
+        --amber: #f6c878;
+        --rose: #ff909d;
+        --content: 1120px;
+      }
+
+      * { box-sizing: border-box; }
+
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 28px;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(ellipse at 80% 0%, rgba(116, 85, 220, .16), transparent 36rem),
+          radial-gradient(ellipse at 0% 32%, rgba(53, 170, 160, .07), transparent 32rem),
+          var(--page);
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 15px;
+        line-height: 1.7;
+      }
+
+      a { color: #c5b5ff; text-decoration: none; }
+      a:hover { color: #e0d7ff; text-decoration: underline; text-underline-offset: 4px; }
+      code, pre { font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace; }
+      code { color: #d5c7ff; font-size: .92em; }
+
+      .shell {
+        display: grid;
+        grid-template-columns: 238px minmax(0, 1fr);
+        gap: 52px;
+        max-width: 1510px;
+        margin: 0 auto;
+        padding: 28px 34px 80px;
+      }
+
+      .sidebar {
+        position: sticky;
+        top: 24px;
+        align-self: start;
+        max-height: calc(100vh - 48px);
+        overflow-y: auto;
+        padding: 15px 12px 18px 0;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 0 28px;
+        padding: 0 10px;
+        color: var(--text);
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 38px;
+        height: 38px;
+        place-items: center;
+        border: 1px solid rgba(167, 139, 250, .3);
+        border-radius: 13px;
+        background: rgba(167, 139, 250, .12);
+        color: #c7b5ff;
+        font-size: 19px;
+      }
+
+      .brand strong { display: block; font-size: 15px; letter-spacing: -.02em; }
+      .brand small { display: block; color: var(--subtle); font-size: 10px; }
+
+      .nav-label {
+        margin: 20px 10px 8px;
+        color: #666b82;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+      }
+
+      .sidebar nav a {
+        display: block;
+        margin: 2px 0;
+        padding: 7px 10px;
+        border-radius: 8px;
+        color: var(--muted);
+        font-size: 12px;
+        transition: background .18s ease, color .18s ease;
+      }
+
+      .sidebar nav a:hover, .sidebar nav a:focus-visible {
+        background: rgba(255, 255, 255, .055);
+        color: var(--text);
+        text-decoration: none;
+      }
+
+      main { min-width: 0; }
+      .hero { padding: 50px 0 42px; }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 10px;
+        border: 1px solid rgba(167, 139, 250, .24);
+        border-radius: 999px;
+        background: rgba(167, 139, 250, .08);
+        color: #c8baff;
+        font-size: 11px;
+        font-weight: 650;
+        letter-spacing: .035em;
+      }
+
+      .eyebrow::before {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--mint);
+        content: "";
+        box-shadow: 0 0 12px rgba(115, 226, 192, .7);
+      }
+
+      h1 {
+        max-width: 850px;
+        margin: 20px 0 14px;
+        font-size: clamp(42px, 6.4vw, 76px);
+        font-weight: 650;
+        letter-spacing: -.065em;
+        line-height: .99;
+      }
+
+      h1 span {
+        background: linear-gradient(100deg, #c7b3ff 5%, #8cdccc 88%);
+        background-clip: text;
+        color: transparent;
+      }
+
+      .hero-copy { max-width: 720px; color: #b0b4c8; font-size: 17px; }
+      .hero-copy strong { color: var(--text); font-weight: 600; }
+
+      .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 25px; }
+      .button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, .04);
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .button.primary {
+        border-color: rgba(167, 139, 250, .36);
+        background: rgba(167, 139, 250, .15);
+        color: #e3dbff;
+      }
+
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 36px;
+      }
+
+      .stat, .card, .callout, .terminal {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: linear-gradient(145deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .014));
+      }
+
+      .stat { padding: 15px 16px; }
+      .stat strong { display: block; font-size: 20px; letter-spacing: -.04em; }
+      .stat span { color: var(--subtle); font-size: 11px; }
+
+      .content-section {
+        padding: 35px 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .section-kicker {
+        margin-bottom: 8px;
+        color: var(--violet);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+      }
+
+      h2 {
+        margin: 0 0 14px;
+        font-size: clamp(25px, 3vw, 34px);
+        font-weight: 620;
+        letter-spacing: -.045em;
+        line-height: 1.2;
+      }
+
+      h3 {
+        margin: 25px 0 8px;
+        font-size: 17px;
+        font-weight: 620;
+        letter-spacing: -.025em;
+      }
+
+      p { margin: 10px 0 14px; color: var(--muted); }
+      .lead { max-width: 780px; font-size: 16px; }
+      .small { color: var(--subtle); font-size: 12px; }
+
+      .grid-2, .grid-3 { display: grid; gap: 12px; }
+      .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+      .card { padding: 18px; }
+      .card h3 { margin: 0 0 7px; }
+      .card p { margin: 0; font-size: 13px; }
+      .card .icon { display: block; margin-bottom: 10px; font-size: 18px; }
+      .card ul { margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+      .card li + li { margin-top: 5px; }
+
+      .callout { margin: 18px 0; padding: 16px 18px; }
+      .callout strong { color: var(--text); }
+      .callout p { margin: 4px 0 0; font-size: 13px; }
+      .callout.violet { border-color: rgba(167, 139, 250, .23); background: rgba(167, 139, 250, .055); }
+      .callout.green { border-color: rgba(115, 226, 192, .2); background: rgba(115, 226, 192, .045); }
+      .callout.amber { border-color: rgba(246, 200, 120, .2); background: rgba(246, 200, 120, .045); }
+
+      .workflow {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+        margin: 21px 0;
+      }
+      .step {
+        position: relative;
+        padding: 13px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        background: rgba(255, 255, 255, .025);
+      }
+      .step b { display: block; color: #d6caff; font-size: 12px; }
+      .step span { color: var(--subtle); font-size: 11px; }
+
+      .score-list { display: grid; gap: 12px; margin: 20px 0; }
+      .score-row { display: grid; grid-template-columns: 175px 1fr 42px; align-items: center; gap: 12px; font-size: 12px; }
+      .score-row span { color: var(--muted); }
+      .score-row b { color: var(--text); text-align: right; }
+      .bar { height: 7px; overflow: hidden; border-radius: 9px; background: rgba(255, 255, 255, .07); }
+      .bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #8e7ae8, #73d9c2); }
+
+      .pill-list { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0; }
+      .pill {
+        padding: 4px 9px;
+        border: 1px solid var(--line);
+        border-radius: 99px;
+        background: rgba(255, 255, 255, .025);
+        color: #c1c4d5;
+        font-size: 11px;
+      }
+      .pill.green { border-color: rgba(115, 226, 192, .24); color: #9cebd2; }
+      .pill.amber { border-color: rgba(246, 200, 120, .24); color: #f5d595; }
+      .pill.rose { border-color: rgba(255, 144, 157, .24); color: #ffb0b8; }
+      .pill.violet { border-color: rgba(167, 139, 250, .25); color: #cfbfff; }
+
+      .terminal { overflow: hidden; margin: 16px 0; }
+      .terminal-bar { display: flex; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+      .terminal-bar i { width: 8px; height: 8px; border-radius: 50%; background: #ff7b86; }
+      .terminal-bar i:nth-child(2) { background: #f5c96c; }
+      .terminal-bar i:nth-child(3) { background: #6edbb5; }
+      pre { overflow-x: auto; margin: 0; padding: 17px; color: #d1d1df; font-size: 12px; line-height: 1.75; }
+
+      .tree {
+        overflow: auto;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, .2);
+        color: #c7c8d7;
+        font-size: 12px;
+        line-height: 1.8;
+        white-space: pre;
+      }
+
+      .table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--line); border-radius: 12px; }
+      table { width: 100%; border-collapse: collapse; font-size: 12px; }
+      th, td { padding: 11px 13px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+      th { background: rgba(255, 255, 255, .035); color: #e6e4f0; font-weight: 600; }
+      td { color: var(--muted); }
+      tr:last-child td { border-bottom: 0; }
+
+      details { margin: 10px 0; border: 1px solid var(--line); border-radius: 11px; background: rgba(255, 255, 255, .02); }
+      summary { padding: 12px 15px; color: #e2e0ed; cursor: pointer; font-size: 13px; font-weight: 600; }
+      details > div { padding: 0 15px 13px; color: var(--muted); font-size: 13px; }
+
+      .footer { margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--subtle); font-size: 11px; }
+
+      @media (max-width: 980px) {
+        .shell { grid-template-columns: 1fr; gap: 0; padding: 18px 24px 60px; }
+        .sidebar { position: static; max-height: none; padding: 0; border-bottom: 1px solid var(--line); }
+        .brand { margin: 0 0 12px; }
+        .sidebar nav { display: flex; flex-wrap: wrap; gap: 5px; overflow: visible; padding-bottom: 12px; }
+        .nav-label { display: none; }
+        .sidebar nav a { flex: 0 0 auto; white-space: nowrap; }
+        .hero { padding-top: 40px; }
+      }
+
+      @media (max-width: 640px) {
+        .shell { padding-right: 17px; padding-left: 17px; }
+        .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        .workflow { grid-template-columns: 1fr 1fr; }
+        .workflow .step:last-child { grid-column: 1 / -1; }
+        .score-row { grid-template-columns: 125px 1fr 35px; gap: 8px; font-size: 11px; }
+        .hero-copy { font-size: 15px; }
+        .content-section { padding: 28px 0; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+      }
+
+      @media print {
+        :root { color-scheme: light; --page: #fff; --panel: #fff; --text: #151522; --muted: #424454; --subtle: #626579; --line: #dddde5; }
+        body { background: #fff; color: var(--text); }
+        .shell { display: block; max-width: none; padding: 0; }
+        .sidebar, .hero-actions { display: none; }
+        .hero { padding: 0 0 20px; }
+        h1 span { color: #6251a8; -webkit-text-fill-color: #6251a8; }
+        .stat, .card, .callout, .terminal, details, .tree { background: #fff; break-inside: avoid; }
+        a { color: #49388d; }
+        pre, .tree { white-space: pre-wrap; }
+        .content-section { break-inside: avoid; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar" aria-label="Project guide navigation">
+        <a class="brand" href="#top">
+          <span class="brand-mark" aria-hidden="true">✦</span>
+          <span><strong>TechCV</strong><small>PROJECT GUIDE · v0.3</small></span>
+        </a>
+        <div class="nav-label">Guide</div>
+        <nav>
+          <a href="#overview">Overview</a>
+          <a href="#workflow">Product workflow</a>
+          <a href="#analysis">Analysis & scoring</a>
+          <a href="#ai-review">AI review</a>
+          <a href="#architecture">Architecture</a>
+          <a href="#api">API contract</a>
+          <a href="#privacy">Privacy & guardrails</a>
+          <a href="#local-setup">Run locally</a>
+          <a href="#verification">Verification</a>
+          <a href="#roadmap">Roadmap</a>
+        </nav>
+        <div class="nav-label">Resources</div>
+        <nav>
+          <a href="README.md">Repository README</a>
+          <a href="https://github.com/ashnair10/AI-Resume-Analyzer">GitHub repository</a>
+          <a href="http://localhost:3000/analyze">Local analysis workspace</a>
+          <a href="http://localhost:8000/docs">Local API docs</a>
+        </nav>
+      </aside>
+
+      <main id="top">
+        <header class="hero">
+          <div class="eyebrow">Current implementation · Next.js + FastAPI</div>
+          <h1>Build a resume<br><span>your experience can prove.</span></h1>
+          <p class="hero-copy">
+            TechCV is an evidence-first resume analysis workspace for developers and technical professionals.
+            It connects a target job description to <strong>evidence in a real PDF or DOCX resume</strong>,
+            explains where support is strong or missing, and keeps AI-assisted recommendations grounded in
+            what the candidate can defend.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="http://localhost:3000/analyze">Open local workspace ↗</a>
+            <a class="button" href="http://localhost:8000/docs">Explore API docs ↗</a>
+            <a class="button" href="#local-setup">Run the project ↓</a>
+          </div>
+          <div class="stat-grid" aria-label="Project snapshot">
+            <div class="stat"><strong>PDF + DOCX</strong><span>Resume formats accepted</span></div>
+            <div class="stat"><strong>Local-first</strong><span>Deterministic analysis needs no API key</span></div>
+            <div class="stat"><strong>8 MB</strong><span>Current upload limit</span></div>
+            <div class="stat"><strong>v0.3</strong><span>Evidence Workspace</span></div>
+          </div>
+        </header>
+
+        <section class="content-section" id="overview">
+          <div class="section-kicker">01 · Product</div>
+          <h2>What TechCV does today</h2>
+          <p class="lead">
+            The current product accepts one resume and one target job description, then returns a
+            transparent, deterministic first pass. Gemini can optionally add a structured semantic review.
+            TechCV's score is a learning and improvement aid—not a hiring prediction or commercial ATS score.
+          </p>
+          <div class="grid-3">
+            <article class="card">
+              <span class="icon" aria-hidden="true">⌕</span>
+              <h3>Resume analysis</h3>
+              <p>Extracts PDF/DOCX text and available formatting metadata, then checks job-language coverage, sections, impact signals, and direct evidence.</p>
+            </article>
+            <article class="card">
+              <span class="icon" aria-hidden="true">⌁</span>
+              <h3>Evidence-first matching</h3>
+              <p>Surfaces resume lines for high-signal job terms and marks direct support as strong, moderate, weak, or missing.</p>
+            </article>
+            <article class="card">
+              <span class="icon" aria-hidden="true">✳</span>
+              <h3>Optional Gemini review</h3>
+              <p>Can decompose requirements, assess claims, suggest truth-preserving rewrites, and provide recruiter and interview perspectives.</p>
+            </article>
+          </div>
+          <div class="callout violet">
+            <strong>Product principle</strong>
+            <p>A missing keyword is a gap to inspect—not permission to invent a skill, metric, employer, certification, or outcome.</p>
+          </div>
+        </section>
+
+        <section class="content-section" id="workflow">
+          <div class="section-kicker">02 · User journey</div>
+          <h2>From upload to explainable result</h2>
+          <div class="workflow" aria-label="Analysis workflow">
+            <div class="step"><b>1 · Upload</b><span>PDF or DOCX, up to 8 MB</span></div>
+            <div class="step"><b>2 · Target</b><span>Paste a job description (80+ characters)</span></div>
+            <div class="step"><b>3 · Parse</b><span>Extract text and document metadata</span></div>
+            <div class="step"><b>4 · Analyze</b><span>Score, evidence map, and guardrail signals</span></div>
+            <div class="step"><b>5 · Review</b><span>Inspect local results and optional AI insights</span></div>
+          </div>
+          <p>The analysis page presents the Role Evidence Score and readiness, an evidence map, ClaimCheck, an AI review when returned, and a trace/guardrail view. Gemini can be switched off for deterministic-only testing.</p>
+        </section>
+
+        <section class="content-section" id="analysis">
+          <div class="section-kicker">03 · Deterministic engine</div>
+          <h2>Scoring that can be inspected</h2>
+          <p>The local engine uses simple heuristics—not semantic matching—to identify frequent job terms, compare them with resume tokens, locate matching lines, and estimate resume quality signals.</p>
+          <div class="score-list" aria-label="Role Evidence Score weights">
+            <div class="score-row"><span>Requirement coverage</span><div class="bar"><i style="width:35%"></i></div><b>35%</b></div>
+            <div class="score-row"><span>Evidence strength</span><div class="bar"><i style="width:30%"></i></div><b>30%</b></div>
+            <div class="score-row"><span>Impact quality</span><div class="bar"><i style="width:15%"></i></div><b>15%</b></div>
+            <div class="score-row"><span>Section completeness</span><div class="bar"><i style="width:10%"></i></div><b>10%</b></div>
+            <div class="score-row"><span>Formatting / parsability</span><div class="bar"><i style="width:10%"></i></div><b>10%</b></div>
+          </div>
+          <div class="grid-2">
+            <article class="card">
+              <h3>Evidence labels</h3>
+              <div class="pill-list">
+                <span class="pill green">Strong</span><span class="pill amber">Moderate</span>
+                <span class="pill rose">Weak</span><span class="pill">Missing</span>
+              </div>
+              <p>Direct keyword matches are heuristic signals. They do not verify that the candidate's claim is true or establish semantic equivalence.</p>
+            </article>
+            <article class="card">
+              <h3>Readiness labels</h3>
+              <div class="pill-list">
+                <span class="pill green">Ready to apply</span>
+                <span class="pill amber">Improve before applying</span>
+                <span class="pill rose">Weak fit</span>
+              </div>
+              <p>These are generated from the deterministic score and evidence-strength thresholds. They are not a prediction of employer decisions.</p>
+            </article>
+          </div>
+          <div class="callout amber">
+            <strong>Interpretation note</strong>
+            <p>Keyword coverage and evidence strength are deliberately separate. Repeated terminology can raise coverage without proving meaningful experience.</p>
+          </div>
+        </section>
+
+        <section class="content-section" id="ai-review">
+          <div class="section-kicker">04 · Optional AI</div>
+          <h2>Gemini enhances the review; it is not required</h2>
+          <div class="grid-2">
+            <article class="card">
+              <h3>Deterministic mode</h3>
+              <ul>
+                <li>Resume extraction and heuristic analysis</li>
+                <li>Role Evidence Score and requirement/evidence map</li>
+                <li>Subjective-claim and weak-support signals</li>
+                <li>No Gemini key or external model call required</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>AI-enhanced mode</h3>
+              <ul>
+                <li>Structured job requirement decomposition</li>
+                <li>Semantic evidence review and ClaimCheck</li>
+                <li>Strengths, gaps, recruiter scan, and interview focus</li>
+                <li>Truth-preserving rewrite suggestions with confirmation flags</li>
+              </ul>
+            </article>
+          </div>
+          <p>The backend validates Gemini output against Pydantic response models. If the key is absent or a model call fails, the deterministic response remains available and the API exposes AI status/error metadata.</p>
+          <div class="callout green">
+            <strong>Truth guard</strong>
+            <p>AI suggestions are recommendations, not automatically applied resume edits. Verify every suggested claim and confirm any added scope, ownership, metric, or technology.</p>
+          </div>
+        </section>
+
+        <section class="content-section" id="architecture">
+          <div class="section-kicker">05 · System design</div>
+          <h2>Small, explicit application boundaries</h2>
+          <div class="tree">TechCV/
+├── frontend/                 Next.js, React, TypeScript, Tailwind, Motion
+│   ├── app/analyze/          Main upload and analysis workspace
+│   ├── components/           Analysis and UI components
+│   └── lib/                  API client and response types
+├── backend/
+│   ├── app/main.py           FastAPI health and analysis endpoints
+│   ├── src/                  Resume parser, heuristics, Gemini schemas/review
+│   ├── core/                 AI gateway, guardrails, logging, telemetry
+│   └── tests/                API and analysis tests
+├── legacy/streamlit-app/     Preserved original CVAlchemy application
+├── docker-compose.yml        Optional two-service container setup
+└── TECHCV_PROJECT_DOCUMENTATION.html</div>
+          <div class="grid-2">
+            <article class="card">
+              <h3>Frontend</h3>
+              <p>Next.js App Router and React client UI. Sends a multipart request with the resume, job description, AI preference, and an <code>x-trace-id</code>.</p>
+            </article>
+            <article class="card">
+              <h3>Backend</h3>
+              <p>FastAPI parses PDF/DOCX, runs the deterministic engine, inspects job-description signals, and optionally calls the AI gateway.</p>
+            </article>
+          </div>
+          <div class="grid-2">
+            <article class="card">
+              <h3>AI gateway</h3>
+              <p><code>backend/core/ai_gateway.py</code> is the provider boundary for Gemini today and a future location for routing or provider integrations.</p>
+            </article>
+            <article class="card">
+              <h3>Observability</h3>
+              <p>Structured logs include request trace metadata. FastAPI OpenTelemetry instrumentation is opt-in with <code>OTEL_ENABLED=true</code> and an optional OTLP endpoint.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="content-section" id="api">
+          <div class="section-kicker">06 · API</div>
+          <h2>Current local API contract</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Method</th><th>Route</th><th>Purpose</th><th>Current behavior</th></tr></thead>
+              <tbody>
+                <tr><td><code>GET</code></td><td><code>/health</code></td><td>Service health</td><td>Returns service name, status, and version.</td></tr>
+                <tr><td><code>POST</code></td><td><code>/api/analyze</code></td><td>Analyze a resume against a job description</td><td>Multipart: <code>resume</code>, <code>job_description</code>, optional <code>use_ai</code>; trace via <code>x-trace-id</code>.</td></tr>
+                <tr><td><code>GET</code></td><td><code>/docs</code></td><td>Interactive API reference</td><td>FastAPI-generated OpenAPI documentation.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h3>Validation and response outline</h3>
+          <ul>
+            <li>Accepts filenames ending in <code>.pdf</code> or <code>.docx</code>.</li>
+            <li>Rejects job descriptions shorter than 80 characters.</li>
+            <li>Rejects uploaded files larger than 8 MiB.</li>
+            <li>Returns a clear 422 response if the document contains no extractable text (for example, a scanned PDF without OCR).</li>
+            <li>Response groups include <code>trace_id</code>, timing, document metadata, guardrail signals, deterministic <code>analysis</code>, AI metadata, and optional <code>ai_review</code>.</li>
+          </ul>
+          <div class="terminal">
+            <div class="terminal-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+            <pre>{
+  "trace_id": "request-trace-id",
+  "duration_ms": 48.2,
+  "document": { "filename": "resume.docx", "file_type": "docx", "page_count": 0 },
+  "guardrails": {
+    "pii_detected": false,
+    "pii_types": [],
+    "prompt_injection_signals": []
+  },
+  "analysis": {
+    "role_evidence_score": 72,
+    "readiness": "improve_before_applying",
+    "evidence_map": []
+  },
+  "ai": { "enabled": false, "provider": "none", "model": null, "error": null },
+  "ai_review": null
+}</pre>
+          </div>
+          <p class="small">Illustrative shape only. Actual scores, evidence, guardrail signals, and AI metadata depend on the submitted files and configuration. DOCX page count is reported as zero because pagination depends on the renderer.</p>
+        </section>
+
+        <section class="content-section" id="privacy">
+          <div class="section-kicker">07 · Trust & operations</div>
+          <h2>Privacy, guardrails, and current limitations</h2>
+          <div class="grid-2">
+            <article class="card">
+              <h3>What is in place</h3>
+              <ul>
+                <li>Local deterministic analysis works without a model key.</li>
+                <li>Lightweight email/phone and prompt-injection phrase checks run on the job description.</li>
+                <li>Trace IDs connect the frontend request with API response and structured analysis logs; the current log context includes the uploaded filename, so treat logs as operational data.</li>
+                <li>OpenTelemetry export is disabled unless explicitly configured.</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>Important boundaries</h3>
+              <ul>
+                <li>Guardrail checks are lightweight signals, not comprehensive PII redaction or security filtering.</li>
+                <li>Resume text is sent to Gemini when AI review is enabled and a Gemini key is configured.</li>
+                <li>Deterministic matching is keyword-based; it does not perform embeddings or semantic retrieval.</li>
+                <li>Scanned-image OCR, generated resume exports, accounts, and persistent analysis history are not in this build.</li>
+              </ul>
+            </article>
+          </div>
+          <div class="callout amber">
+            <strong>Use real candidate data carefully</strong>
+            <p>The current local app is a development/demo implementation. Configure a trusted model provider, secure secrets, add robust privacy controls, and review deployment security before processing sensitive resumes in production.</p>
+          </div>
+        </section>
+
+        <section class="content-section" id="local-setup">
+          <div class="section-kicker">08 · Developer setup</div>
+          <h2>Run TechCV locally</h2>
+          <p>Use separate terminals for the FastAPI backend and Next.js frontend. The commands below are for Windows PowerShell; activate the backend virtual environment before installing packages.</p>
+          <h3>Backend</h3>
+          <div class="terminal">
+            <div class="terminal-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+            <pre>cd backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
+uvicorn app.main:app --reload --port 8000</pre>
+          </div>
+          <h3>Frontend</h3>
+          <div class="terminal">
+            <div class="terminal-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+            <pre>cd frontend
+npm install
+Copy-Item .env.local.example .env.local
+npm run dev</pre>
+          </div>
+          <p>Open <a href="http://localhost:3000/analyze">http://localhost:3000/analyze</a> for the workspace and <a href="http://localhost:8000/docs">http://localhost:8000/docs</a> for the API. The backend health check is <code>http://localhost:8000/health</code>.</p>
+          <h3>Enable Gemini (optional)</h3>
+          <div class="terminal">
+            <div class="terminal-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+            <pre># backend/.env
+GEMINI_API_KEY=your_key_here
+GEMINI_MODEL=gemini-2.5-flash</pre>
+          </div>
+          <p>Keep <code>.env</code> and <code>.env.local</code> files private. Without a Gemini key, switch off AI-enhanced review or use deterministic analysis; the core score and evidence map still work.</p>
+          <details>
+            <summary>Optional: Docker Compose</summary>
+            <div>Compose starts the API on port 8000 and web app on port 3000. Create <code>backend/.env</code> from <code>backend/.env.example</code> before starting because the API service reads that env file. Then run <code>docker compose up --build</code> from the repository root.</div>
+          </details>
+        </section>
+
+        <section class="content-section" id="verification">
+          <div class="section-kicker">09 · Quality checks</div>
+          <h2>Test the current implementation</h2>
+          <div class="terminal">
+            <div class="terminal-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+            <pre># Backend unit and API tests
+cd backend
+pytest -q
+
+# Frontend production compile and type check
+cd ../frontend
+npm run build</pre>
+          </div>
+          <div class="callout green">
+            <strong>Latest local verification · 4 October 2026</strong>
+            <p>Six backend tests passed, including API health, upload-to-analysis DOCX flow, empty-text rejection, and localhost/loopback CORS. The Next.js production build passed. A browser-driven local DOCX upload returned a rendered analysis result.</p>
+          </div>
+          <p class="small">Verification is a snapshot of the current development checkout, not a guarantee that later changes or another machine have the same result.</p>
+        </section>
+
+        <section class="content-section" id="roadmap">
+          <div class="section-kicker">10 · Direction</div>
+          <h2>What comes next</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Status</th><th>Capability</th><th>Scope</th></tr></thead>
+              <tbody>
+                <tr><td><span class="pill green">Current · v0.3</span></td><td>Evidence Workspace</td><td>Next.js UI, FastAPI API, deterministic Role Evidence Score and map, optional Gemini review, trace IDs, basic guardrails.</td></tr>
+                <tr><td><span class="pill violet">Planned · v0.4</span></td><td>Developer Evidence Graph</td><td>Technology normalization, semantic matching, and clearer provenance between requirements, projects, and outcomes.</td></tr>
+                <tr><td><span class="pill violet">Planned · v0.5</span></td><td>Resume Builder</td><td>Master evidence profile, editable role-specific resumes, confirmation states, and DOCX/PDF export.</td></tr>
+                <tr><td><span class="pill violet">Planned · v0.6</span></td><td>Experiment Lab</td><td>Resume variant comparison, evidence differences, and version history.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout violet">
+            <strong>Long-term direction</strong>
+            <p>Grow from a resume analyzer into a career evidence workspace—without losing explainability, user control, or the rule that claims must be supportable.</p>
+          </div>
+        </section>
+
+        <footer class="footer">
+          <p>TechCV · Evidence-first resume analysis for developers and technical professionals.</p>
+          <p>Repository: <a href="https://github.com/ashnair10/AI-Resume-Analyzer">ashnair10/AI-Resume-Analyzer</a> · This document describes the current v0.3 implementation; roadmap items are explicitly marked planned.</p>
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>

@@ -4,6 +4,8 @@
 
 TechCV maps a target job description to evidence in a candidate's real experience before recommending resume changes. It separates **keyword coverage** from **evidence strength**, flags claims that need confirmation, and provides an explainable **Role Evidence Score** instead of pretending to reproduce a proprietary ATS score.
 
+[Open the full project guide](./TECHCV_PROJECT_DOCUMENTATION.html) for the current architecture, workflow, API contract, local setup, verification status, and roadmap.
+
 ## What is included in this build
 
 - Next.js + React + TypeScript frontend
